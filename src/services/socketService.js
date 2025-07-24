@@ -6,7 +6,7 @@ class SocketService {
     this.isConnected = false;
   }
 
-  connect(serverUrl = 'http://localhost:5000') {
+  connect(serverUrl = import.meta.env.SERVER_BASE_URL) {
     if (this.socket) return;
 
     this.socket = io(serverUrl, {
