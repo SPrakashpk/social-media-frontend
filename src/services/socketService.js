@@ -6,7 +6,7 @@ class SocketService {
     this.isConnected = false;
   }
 
-  connect(serverUrl = import.meta.env.SERVER_BASE_URL) {
+  connect(serverUrl = import.meta.env.VITE_SERVER_BASE_URL) {
     if (this.socket) return;
 
     this.socket = io(serverUrl, {
