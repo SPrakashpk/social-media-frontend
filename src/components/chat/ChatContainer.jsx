@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Sidebar } from './Sidebar/ChatSidebar';
+import { Sidebar } from './sidebar/ChatSidebar';
 import { ChatArea } from './chatArea/ChatArea';
 import { UserRecommendations } from './modals/UserRecommendation';
 import { getChatList } from '../../services/chatService';
