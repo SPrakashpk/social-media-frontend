@@ -12,7 +12,7 @@ import { ChatContainer } from './components/chat/ChatContainer'
 
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); //localStorage.getItem('chirp_token')
+  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('chirp_token')); 
   const handleLoginChanges = (value) => setIsLoggedIn(value);
   return (
     <Router>

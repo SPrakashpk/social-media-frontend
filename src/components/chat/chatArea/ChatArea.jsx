@@ -25,7 +25,7 @@ socketService.onMessage((message) => {
   }
 });
 
-  // 🔁 Scroll to bottom when messages update
+  // Scroll to bottom when messages update
 useEffect(() => {
   const el = messagesEndRef.current;
   if (!el) return;
@@ -41,7 +41,7 @@ useEffect(() => {
 }, [messages]);
 
 
-  // 🔁 Fetch messages when chat changes
+  // Fetch messages when chat changes
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedChat?._id) return;
