@@ -36,28 +36,28 @@ class SocketService {
     }
   }
 
-  // ✅ Join as a user
+  // Join as a user
   joinUser(userId) {
     if (this.socket) {
       this.socket.emit('user:join', userId);
     }
   }
 
-  // ✅ Send message
+  // Send message
   sendMessage({ chatId, senderId, content, type = 'text', mentions = [] }) {
     if (this.socket) {
       this.socket.emit('message:send', { chatId, senderId, content, type, mentions });
     }
   }
 
-  // ✅ Receive message
+  // Receive message
   onMessage(callback) {
     if (this.socket) {
       this.socket.on('message:receive', callback);
     }
   }
 
-  // ✅ Typing start/stop
+  // Typing start/stop
   sendTypingStart(chatId, userId) {
     if (this.socket) {
       this.socket.emit('typing:start', { chatId, userId });
@@ -76,14 +76,14 @@ class SocketService {
     }
   }
 
-  // ✅ Message seen
+  // Message seen
   markMessageSeen(messageId) {
     if (this.socket) {
       this.socket.emit('message:seen', { messageId });
     }
   }
 
-  // ✅ Online/offline user updates
+  // Online/offline user updates
   onUserOnline(callback) {
     if (this.socket) {
       this.socket.on('user:online', callback);
@@ -96,7 +96,7 @@ class SocketService {
     }
   }
 
-  // ✅ Remove all listeners
+  // Remove all listeners
   removeAllListeners() {
     if (this.socket) {
       this.socket.removeAllListeners();
