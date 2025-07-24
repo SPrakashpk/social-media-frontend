@@ -3,35 +3,7 @@ import {
   Card, Button, Image, Row, Col, Container, Modal, Form
 } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-
-const mockUser = {
-  _id: 'SiItjsSwPp88',
-  username: 'prakash_s',
-  name: 'Prakash S',
-  bio: 'CSE Graduate | Building Chirp 🚀',
-  profilePic: 'https://via.placeholder.com/100',
-  followers: ['u1', 'u2', 'u3'],
-  following: ['u4', 'u5'],
-}
-
-const mockPosts = [
-  {
-    _id: 'post1',
-    text: 'This is my first post!',
-    media: [{ signedUrl: 'https://via.placeholder.com/300x200' }],
-    createdAt: '2025-07-20T10:00:00Z',
-    likes: ['u1', 'u2'],
-    comments: ['c1']
-  },
-  {
-    _id: 'post2',
-    text: 'Enjoying the Chirp project ✨',
-    media: [],
-    createdAt: '2025-07-18T15:20:00Z',
-    likes: ['u3'],
-    comments: []
-  },
-]
+import API from '../api/axios'
 
 const Profile = () => {
   const [user, setUser] = useState(null)
@@ -44,46 +16,76 @@ const Profile = () => {
   })
 
   const navigate = useNavigate()
+  const userId = (JSON.parse(localStorage.getItem('user'))).id
 
   useEffect(() => {
-    setUser(mockUser)
-    setPosts(mockPosts)
-  }, [])
+    const fetchProfileData = async () => {
+      try {
+        const token = localStorage.getItem('chirp_token')
+        const res = await API.get('/users/profile-details', {
+          // headers: {
+          //   Authorization: `Bearer ${token}`,
+          // },
+          params: {
+            id: userId,
+          },
+        })
+
+        setUser(res.data.data)
+        setPosts(res.data.data.posts)
+      } catch (err) {
+        console.error('Failed to fetch profile data:', err)
+        navigate('/login')
+      }
+    }
+
+    fetchProfileData()
+  }, [navigate])
 
   const handleEditClick = () => {
     setEditData({
-      name: user.name,
-      bio: user.bio,
-      profilePic: user.profilePic,
+      name: user.name || '',
+      bio: user.bio || '',
+      profilePic: user.profilePic || '',
     })
     setShowModal(true)
   }
 
-  const handleSaveChanges = () => {
-    setUser(prev => ({
-      ...prev,
-      name: editData.name,
-      bio: editData.bio,
-      profilePic: editData.profilePic,
-    }))
-    setShowModal(false)
+  const handleSaveChanges = async () => {
+    try {
+      const token = localStorage.getItem('chirp_token')
+      const updated = {
+        name: editData.name,
+        bio: editData.bio,
+        profilePic: editData.profilePic,
+      }
+
+      const res = await API.put('/users/me', updated, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      setUser((prev) => ({ ...prev, ...res.data }))
+      setShowModal(false)
+    } catch (err) {
+      console.error('Failed to update profile:', err)
+    }
   }
 
   if (!user) return <div className="text-center mt-5">Loading...</div>
 
   return (
     <Container className="py-4">
-      {/* Back Button */}
       <Button variant="link" onClick={() => navigate('/')} className="mb-3">
         ← Back to Home
       </Button>
 
-      {/* Profile Card */}
       <Card className="mb-4 p-4 shadow-sm border-0">
         <Row>
           <Col xs={12} md={3} className="text-center mb-3 mb-md-0">
             <Image
-              src={user.profilePic}
+              src={user.profilePic || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'}
               roundedCircle
               fluid
               style={{ width: '120px', height: '120px' }}
@@ -94,9 +96,9 @@ const Profile = () => {
             <h5 className="text-muted">{user.name}</h5>
             <p className="mt-2">{user.bio}</p>
             <div className="d-flex gap-4 mb-3">
-              <span><strong>{posts.length}</strong> Posts</span>
-              <span><strong>{user.followers.length}</strong> Followers</span>
-              <span><strong>{user.following.length}</strong> Following</span>
+              <span><strong>{user.postCount}</strong> Posts</span>
+              <span><strong>{user.followersCount}</strong> Followers</span>
+              <span><strong>{user.followingCount}</strong> Following</span>
             </div>
             <Button variant="primary" size="sm" onClick={handleEditClick}>
               Edit Profile
@@ -105,17 +107,16 @@ const Profile = () => {
         </Row>
       </Card>
 
-      {/* Posts */}
       <h5 className="mb-3">Posts</h5>
       {posts.length > 0 ? posts.map(post => (
         <Card key={post._id} className="mb-3 p-3 shadow-sm border-0">
           <p>{post.text}</p>
-          
-          {post.media.length > 0 && (
+
+          {post.media && post.media.length > 0 && (
             <div className="d-flex flex-wrap gap-3 mt-2">
               {post.media.map((mediaItem, idx) => (
                 <img
-                  key={idx}
+                  key={mediaItem.key || idx}
                   src={mediaItem.signedUrl}
                   alt="media"
                   style={{
@@ -129,13 +130,11 @@ const Profile = () => {
             </div>
           )}
           <div className="text-muted small mt-2">
-  ❤️ {post.likes.length} &nbsp;&nbsp; 💬 {post.comments.length}
-</div>
-
+            ❤️ {post.likes.length} &nbsp;&nbsp; 💬 {post.comments.length}
+          </div>
         </Card>
       )) : <p className="text-muted">No posts yet.</p>}
 
-      {/* Edit Profile Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Edit Profile</Modal.Title>

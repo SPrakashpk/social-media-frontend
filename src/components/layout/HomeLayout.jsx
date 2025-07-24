@@ -5,7 +5,7 @@ import Feed from '../../pages/HomeFeed'
 
 const HomeLayout = () => (
   <>
-    <Header />
+  
 
     <div
       className="layout-container d-flex"

@@ -6,7 +6,7 @@ import Modal from 'react-bootstrap/Modal'
 import { useState } from 'react'
 import { FaPhotoVideo, FaTimes } from 'react-icons/fa'
 import { createPost } from '../services/postService.js'
-import { Spinner } from 'react-bootstrap'
+import { Spinner, Tab, Tabs } from 'react-bootstrap'
 
 const posts = [
   {
@@ -190,106 +190,110 @@ const Feed = () => {
 
 
   return (
-    <div className="feed px-3">
-      <Card className="mb-4">
-        <Card.Body className="d-flex align-items-center gap-2">
-          <Form.Control
-            as={'textarea'}
-            rows={3}
-            placeholder="What's on your mind?"
-            className="me-2"
-            onClick={() => setShowModal(true)}
-            readOnly
-          />
-          <Button variant="primary" onClick={() => setShowModal(true)}>Post</Button>
-        </Card.Body>
-      </Card>
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton onClick={() => setShowModal(false)}>
-          <Modal.Title>Create Post</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Control
-            as="textarea"
-            rows={6}
-            placeholder="What's on your mind?"
-            value={postText}
-            onChange={e => setPostText(e.target.value)}
-            className="mb-3"
-          />
-          <div className="mb-3">
-            <Form.Label>
-              <Button variant="outline-secondary" as="span">
-                <FaPhotoVideo className="me-2" />
-                Add Media
-              </Button>
-              <Form.Control
-                type="file"
-                multiple
-                accept="image/*,video/*"
-                style={{ display: 'none' }}
-                onChange={handleMediaChange}
-              />
-            </Form.Label>
-          </div>
-          <div className="d-flex flex-wrap gap-2 mb-3">
-            {mediaFiles.map((file, idx) => (
-              <div key={idx} style={{ position: 'relative', width: 100, height: 100 }}>
-                {file.type.startsWith('image') ? (
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt="preview"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
-                  />
-                ) : (
-                  <video
-                    src={URL.createObjectURL(file)}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
-                    controls
-                  />
-                )}
-                <Button
-                  variant="danger"
-                  size="sm"
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    right: 2,
-                    borderRadius: '50%',
-                    padding: 0,
-                    width: 24,
-                    height: 24,
-                  }}
-                  onClick={() => handleRemoveMedia(idx)}
-                >
-                  <FaTimes />
-                </Button>
-              </div>
-            ))}
-          </div>
-          <Button variant="primary" onClick={handlePost} disabled={isPosting} className="w-100">
-            {isPosting ? (
-              <>
-                <Spinner
-                  as="span"
-                  animation="border"
-                  size="sm"
-                  role="status"
-                  aria-hidden="true"
-                  className="me-2"
-                />
-                Posting...
-              </>
-            ) : (
-              'Post'
-            )}
-          </Button>
-        </Modal.Body>
-      </Modal>
+   <div className="feed px-3">
+  <Card className="mb-4">
+    <Card.Body className="d-flex align-items-center gap-2">
+      <Form.Control
+        as={'textarea'}
+        rows={3}
+        placeholder="What's on your mind?"
+        className="me-2"
+        onClick={() => setShowModal(true)}
+        readOnly
+      />
+      <Button variant="primary" onClick={() => setShowModal(true)}>Post</Button>
+    </Card.Body>
+  </Card>
+
+  <Tabs defaultActiveKey="feed" id="feed-tabs" className="mb-3">
+    <Tab eventKey="feed" title="Your Feed">
       {posts.map((post, idx) => (
         <PostCard key={idx} {...post} />
       ))}
-    </div>
+    </Tab>
+    <Tab eventKey="explore" title="Explore">
+      <p className="text-muted">Explore content will go here.</p>
+      {/* You can map another array like explorePosts once implemented */}
+    </Tab>
+  </Tabs>
+
+  <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+    <Modal.Header closeButton>
+      <Modal.Title>Create Post</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+      <Form.Control
+        as="textarea"
+        rows={6}
+        placeholder="What's on your mind?"
+        value={postText}
+        onChange={e => setPostText(e.target.value)}
+        className="mb-3"
+      />
+      <div className="mb-3">
+        <Form.Label>
+          <Button variant="outline-secondary" as="span">
+            <FaPhotoVideo className="me-2" />
+            Add Media
+          </Button>
+          <Form.Control
+            type="file"
+            multiple
+            accept="image/*,video/*"
+            style={{ display: 'none' }}
+            onChange={handleMediaChange}
+          />
+        </Form.Label>
+      </div>
+      <div className="d-flex flex-wrap gap-2 mb-3">
+        {mediaFiles.map((file, idx) => (
+          <div key={idx} style={{ position: 'relative', width: 100, height: 100 }}>
+            {file.type.startsWith('image') ? (
+              <img
+                src={URL.createObjectURL(file)}
+                alt="preview"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
+              />
+            ) : (
+              <video
+                src={URL.createObjectURL(file)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
+                controls
+              />
+            )}
+            <Button
+              variant="danger"
+              size="sm"
+              style={{
+                position: 'absolute',
+                top: 2,
+                right: 2,
+                borderRadius: '50%',
+                padding: 0,
+                width: 24,
+                height: 24,
+              }}
+              onClick={() => handleRemoveMedia(idx)}
+            >
+              <FaTimes />
+            </Button>
+          </div>
+        ))}
+      </div>
+      <Button variant="primary" onClick={handlePost} disabled={isPosting} className="w-100">
+        {isPosting ? (
+          <>
+            <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+            Posting...
+          </>
+        ) : (
+          'Post'
+        )}
+      </Button>
+    </Modal.Body>
+  </Modal>
+</div>
+
   )
 }
 
