@@ -1,27 +1,73 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { Phone, Video, MoreVertical } from 'lucide-react';
+import API from '../../../api/axios.js'
+import { socketService } from '../../../services/socketService.js';
 
 export const ChatArea = ({
   selectedChat,
-  messages,
   currentUser,
   onSendMessage,
   onOpenUserRecommendations,
 }) => {
   const messagesEndRef = useRef(null);
+  const [messages, setMessages] = useState([]);
+  const [currentChatId, setCurrentChatId] = useState(selectedChat?._id);
+socketService.onMessage((message) => {
+  if (message.chat === currentChatId) {
+    setMessages((prevMessages) => {
+      const exists = prevMessages.some((m) => m._id === message._id);
+      return exists ? prevMessages : [...prevMessages, message];
+    });
+  }
+});
 
+  // 🔁 Scroll to bottom when messages update
+useEffect(() => {
+  const el = messagesEndRef.current;
+  if (!el) return;
+
+  const container = el.parentNode;
+  const isNearBottom =
+    container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+
+  el.scrollIntoView({
+    behavior: isNearBottom ? 'smooth' : 'auto',
+    block: 'end',
+  });
+}, [messages]);
+
+
+  // 🔁 Fetch messages when chat changes
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const fetchMessages = async () => {
+      if (!selectedChat?._id) return;
+      setCurrentChatId(selectedChat?._id)
+      try {
+        const res = await API.get('/chat/getChatMessages', {
+          params: { chatId: selectedChat._id },
+        });
+
+        if (res.data.success) {
+          setMessages(res.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch messages:', err);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedChat]);
 
   if (!selectedChat) {
     return (
       <div className="d-flex align-items-center justify-content-center flex-grow-1 w-100 text-center p-5">
         <div>
           <div className="mb-4">
+            {/* icon */}
             <svg
               width="80"
               height="80"
@@ -52,19 +98,19 @@ export const ChatArea = ({
     );
   }
 
-  const otherParticipant = selectedChat.participants.find(p => p.id !== currentUser.id);
+  const otherParticipant = selectedChat.members.find(p => p._id !== currentUser.id);
   const displayName = selectedChat.isGroup ? selectedChat.groupName : otherParticipant?.name;
-  const displayAvatar = selectedChat.isGroup ? selectedChat.groupAvatar : otherParticipant?.avatar;
+  const displayAvatar = (selectedChat.isGroup ? selectedChat.groupAvatar : otherParticipant?.avatar) || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png';
 
   return (
     <div className="d-flex flex-column w-100 h-100 position-relative">
-      {/* Chat Header */}
+      {/* Header */}
       <div className="bg-white border-bottom p-3 sticky-top">
         <Row className="align-items-center justify-content-between">
           <Col>
             <div className="d-flex align-items-center">
               <img
-                src={displayAvatar}
+                src={displayAvatar || null}
                 alt={displayName}
                 className="rounded-circle me-3"
                 width="40"
@@ -75,15 +121,14 @@ export const ChatArea = ({
                 <h6 className="mb-0 fw-semibold">{displayName}</h6>
                 <small className="text-muted">
                   {selectedChat.isGroup
-                    ? `${selectedChat.participants.length} members`
+                    ? `${selectedChat.members.length} members`
                     : otherParticipant?.isOnline
-                    ? 'Online'
-                    : 'Last seen recently'}
+                      ? 'Online'
+                      : 'Last seen recently'}
                 </small>
               </div>
             </div>
           </Col>
-
           <Col xs="auto">
             <div className="d-flex gap-2">
               <Button variant="outline-secondary" size="sm" className="rounded-circle p-2">
@@ -105,10 +150,13 @@ export const ChatArea = ({
         {messages.length > 0 ? (
           <>
             {messages.map((message) => {
-              const sender = selectedChat.participants.find(p => p.id === message.sender);
+              const sender = typeof message.sender === 'string'
+                ? selectedChat.members.find(p => p._id === message.sender)
+                : message.sender;
+
               return (
                 <MessageBubble
-                  key={message.id}
+                  key={message._id}
                   message={message}
                   currentUser={currentUser}
                   sender={sender}

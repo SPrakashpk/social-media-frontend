@@ -25,7 +25,7 @@ export const Sidebar = ({
       {/* Header */}
       <div className="chat-header p-3 border-bottom d-flex align-items-center">
         <img
-          src={currentUser.avatar || 'https://via.placeholder.com/40'}
+          src={currentUser.avatar || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'}
           alt={currentUser.name}
           className="rounded-circle me-3"
           width="40"

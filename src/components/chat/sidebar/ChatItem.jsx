@@ -2,9 +2,9 @@ import React from 'react';
 import { Row, Col, Badge } from 'react-bootstrap';
 
 export const ChatItem = ({ chat, currentUser, isSelected, onClick }) => {
-  const otherParticipant = chat.participants.find(p => p.id !== currentUser.id);
+  const otherParticipant = chat.members.find(p => p._id !== currentUser.id);
   const displayName = chat.isGroup ? chat.groupName : otherParticipant?.name;
-  const displayAvatar = chat.isGroup ? chat.groupAvatar : otherParticipant?.avatar;
+  const displayAvatar = (chat.isGroup ? chat.groupAvatar : otherParticipant?.avatar) || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png';
   
   const formatTime = (date) => {
     const now = new Date();
@@ -35,7 +35,7 @@ export const ChatItem = ({ chat, currentUser, isSelected, onClick }) => {
         <Col xs="auto">
           <div className="position-relative">
             <img
-              src={displayAvatar}
+              src={displayAvatar || null}
               alt={displayName}
               className="rounded-circle"
               width="50"
@@ -67,16 +67,16 @@ export const ChatItem = ({ chat, currentUser, isSelected, onClick }) => {
               <small className="text-muted text-truncate d-block">
                 {chat.lastMessage ? (
                   <>
-                    {chat.isGroup && chat.lastMessage.sender !== currentUser.id && (
+                    {chat.isGroup && chat.lastMessage._id !== currentUser.id && (
                       <span className="fw-medium">
-                        {chat.participants.find(p => p.id === chat.lastMessage?.sender)?.name?.split(' ')[0]}:{' '}
+                        {chat.members.find(p => p._id === chat.lastMessage?._id)?.name?.split(' ')[0]}:{' '}
                       </span>
                     )}
-                    {chat.lastMessage.sender === currentUser.id && <span className="text-muted">You: </span>}
+                    {chat.lastMessage._id === currentUser.id && <span className="text-muted">You: </span>}
                     {truncateMessage(chat.lastMessage.content)}
                   </>
                 ) : (
-                  'No messages yet'
+                  'No messages yet!'
                 )}
               </small>
             </Col>

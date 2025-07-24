@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './Sidebar/ChatSidebar';
 import { ChatArea } from './chatArea/ChatArea';
 import { UserRecommendations } from './modals/UserRecommendation';
-import { mockUsers } from '../data/mockData';
 import { getChatList } from '../../services/chatService';
 import { socketService } from '../../services/socketService';
 import { getCurrentUser } from '../../services/authService';
@@ -25,17 +24,7 @@ export const ChatContainer = () => {
     const fetchChats = async () => {
       try {
         const chatListData = await getChatList(chatState.currentUser.id);
-        const formattedChats = chatListData.data.map(chat => ({
-          ...chat,
-          id: chat._id,
-          participants: chat.members.map(m => ({
-            id: m._id,
-            name: m.name,
-            avatar: m.avatar,
-          })),
-          unreadCount: 0,
-          lastMessage: null,
-        }));
+        const formattedChats = chatListData.data;
 
         setChatState(prev => ({
           ...prev,
@@ -48,16 +37,7 @@ export const ChatContainer = () => {
 
     fetchChats();
 
-    socketService.onMessage((message) => {
-      console.log('on message reacived : ', message)
-      setChatState(prev => ({
-        ...prev,
-        messages: {
-          ...prev.messages,
-          [message.chatId]: [...(prev.messages[message.chat] || []), message.content]
-        }
-      }));
-    });
+   
 
     return () => {
       socketService.removeAllListeners();
@@ -68,7 +48,7 @@ export const ChatContainer = () => {
   const handleChatSelect = useCallback((chatId) => {
     setChatState(prev => {
       const updatedChats = prev.chats.map(chat =>
-        chat.id === chatId ? { ...chat, unreadCount: 0 } : chat
+        chat._id === chatId ? { ...chat, unreadCount: 0 } : chat
       );
       return {
         ...prev,
@@ -83,7 +63,7 @@ export const ChatContainer = () => {
 
     const newMessage = {
       id: Date.now().toString(),
-      sender: chatState.currentUser.id,
+      senderId: chatState.currentUser.id,
       chatId: chatState.selectedChatId,
       content,
       timestamp: new Date(),
@@ -98,7 +78,7 @@ export const ChatContainer = () => {
         [prev.selectedChatId]: [...(prev.messages[prev.selectedChatId] || []), newMessage]
       },
       chats: prev.chats.map(chat =>
-        chat.id === prev.selectedChatId
+        chat._id === prev.selectedChatId
           ? { ...chat, lastMessage: newMessage, updatedAt: new Date() }
           : chat
       )
@@ -160,16 +140,9 @@ export const ChatContainer = () => {
     handleCloseUserRecommendations();
   }, [chatState.chats, chatState.currentUser, handleChatSelect, handleCloseUserRecommendations]);
 
-  const availableUsers = mockUsers.filter(user => {
-    const existingChatUserIds = chatState.chats
-      .filter(chat => !chat.isGroup)
-      .flatMap(chat => chat.participants.map(p => p.id));
+  const availableUsers = []
 
-    return user.id !== chatState.currentUser.id &&
-      !existingChatUserIds.includes(user.id);
-  });
-
-  const selectedChat = chatState.chats.find(chat => chat.id === chatState.selectedChatId);
+  const selectedChat = chatState.chats.find(chat => chat._id === chatState.selectedChatId);
   const selectedChatMessages = chatState.selectedChatId
     ? chatState.messages[chatState.selectedChatId] || []
     : [];
