@@ -3,7 +3,6 @@ import Card from 'react-bootstrap/Card'
 import { FaRegThumbsUp, FaRegComment } from 'react-icons/fa'
 
 const PostCard = (post) => {
-    console.log('post---', post)
     const { userId, text, media, likes, comments, createdAt } = post
 
     return (

@@ -19,8 +19,8 @@ const Sidebar = () => {
         <Nav.Link as={Link} to="/messages" className="text-dark pl-40px">
           Messages
         </Nav.Link>
-        <Nav.Link as={Link} to="/friends" className="text-dark pl-40px">
-          Friends
+        <Nav.Link as={Link} to="/settings" className="text-dark pl-40px">
+          Settings
         </Nav.Link>
       </Nav>
 

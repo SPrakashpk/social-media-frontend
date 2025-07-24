@@ -6,7 +6,7 @@ import Badge from 'react-bootstrap/Badge'
 import { FaBell } from 'react-icons/fa'
 
 const Header = () => (
-  <Navbar bg="white" fixed='top' expand="md" className="border-bottom shadow-sm">
+  <Navbar bg="white" fixed='top' expand="md" className="border-bottom shadow-sm" style={{padding:'10px'}}>
     <Container fluid>
       <Navbar.Brand className="text-primary fw-bold fs-3">Chirp</Navbar.Brand>
       <Form className="d-none d-md-block mx-auto" style={{width: '300px'}}>
