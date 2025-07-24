@@ -1,65 +1,37 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Profile from './pages/Profile'
+import HomeLayout from './components/layout/HomeLayout'
 import './App.css'
-import API from './api/axios'
+import Login from './pages/Login'
+import Settings from './pages/Settings'
+import { useState } from 'react'
+import Register from './pages/Register'
+import { ChatContainer } from './components/chat/ChatContainer'
+
+
 
 function App() {
-  const [count, setCount] = useState(0)
-  const testApi = ()=> {API.get('/health')
-  .then(function (response) {
-    // handle success
-    console.log(response);
-    return response;
-  })
-  .catch(function (error) {
-    // handle error
-    console.log(error);
-  })
-  .finally(function () {
-    // always executed
-
-  });}
-  const s3download = ()=> {API.get('s3-test-download/?key=image.png')
-  .then(function (response) {
-    // handle success
-    console.log(response);
-  })
-  .catch(function (error) {
-    // handle error
-    console.log(error);
-  })
-  .finally(function () {
-    // always executed
-  });}
-
-
+  const [isLoggedIn, setIsLoggedIn] = useState(false); //localStorage.getItem('chirp_token')
+  const handleLoginChanges = (value) => setIsLoggedIn(value);
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <button onClick={testApi}>test api</button>
-        <button onClick={s3download}>s3 download</button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Router>
+        <Routes>
+          <Route
+          path="/"
+          element={isLoggedIn ? <HomeLayout /> : <Login onLoginChange={handleLoginChanges}/>}
+        />
+          <Route path='/registeration' element={<Register onLoginChange={handleLoginChanges}/>}/>
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings/>} />
+          <Route path="/messages" element={<ChatContainer/>} />
+
+          {/* Add more routes as needed */}
+        </Routes>
+    </Router>
   )
 }
 
 export default App
+
+
