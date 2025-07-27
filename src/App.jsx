@@ -12,6 +12,7 @@ import Header from './components/Header';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import OtpVerify from './pages/otpVerify';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('chirp_token'));
@@ -35,9 +36,10 @@ function App() {
       <Header isLoggedIn={isLoggedIn} onLogout={() => handleLoginChanges(false)} />
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Navigate to="/home" replace />} />
+        {/* <Route path="/" element={<Navigate to="/home" replace />} /> */}
+           <Route path="/" element={<LandingPage  />} />
         <Route path="/login" element={<Login onLoginChange={handleLoginChanges} />} />
-        <Route path="/registration" element={<Register onLoginChange={handleLoginChanges} />} />
+        <Route path="/signup" element={<Register onLoginChange={handleLoginChanges} />} />
         <Route path="/verify-otp" element={<OtpVerify />} />
 
 

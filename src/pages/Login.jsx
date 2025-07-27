@@ -88,7 +88,7 @@ const Login = (props) => {
               'Login'
             )}
           </Button>
-          <div>Don't have an account? <Link to={'/registration'}>Sign up</Link></div>
+          <div>Don't have an account? <Link to={'/signup'}>Sign up</Link></div>
         </Form>
       </Card>
     </Container>

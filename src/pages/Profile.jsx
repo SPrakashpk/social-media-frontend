@@ -13,7 +13,10 @@ const Profile = () => {
     name: '',
     bio: '',
     profilePic: '',
-  })
+  });
+  const [hover, setHover] = useState(false)
+  const [showPicModal, setShowPicModal] = useState(false)
+
 
   const navigate = useNavigate()
   const userId = (JSON.parse(localStorage.getItem('user')))?.id
@@ -23,16 +26,14 @@ const Profile = () => {
       try {
         const token = localStorage.getItem('chirp_token')
         const res = await API.get('/users/profile-details', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          params: { id: userId },
         })
 
         setUser(res.data.data)
         setPosts(res.data.data.posts)
       } catch (err) {
         console.error('Failed to fetch profile data:', err)
-        navigate('/login')
+
       }
     }
 
@@ -70,6 +71,63 @@ const Profile = () => {
     }
   }
 
+
+  const DEFAULT_AVATAR = 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'
+
+  const handleProfilePicUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Only image files are allowed.')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be under 5MB.')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('profilePic', file)
+
+    try {
+      const token = localStorage.getItem('chirp_token')
+      const res = await API.put('/users/me/upload-avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      setUser(prev => ({ ...prev, profilePic: res.data.profilePic }))
+      setShowPicModal(false)
+    } catch (err) {
+      console.error('Upload failed:', err)
+      alert('Failed to upload profile picture.')
+    }
+  }
+
+  const handleRemoveProfilePic = async () => {
+    try {
+      const token = localStorage.getItem('chirp_token')
+      const res = await API.put('/users/me/remove-avatar', {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      setUser(prev => ({ ...prev, profilePic: DEFAULT_AVATAR }))
+      setShowPicModal(false)
+    } catch (err) {
+      console.error('Remove failed:', err)
+      alert('Failed to remove profile picture.')
+    }
+  }
+
+
+
+
+
   if (!user) return <div className="text-center mt-5">Loading...</div>
 
   return (
@@ -80,14 +138,34 @@ const Profile = () => {
 
       <Card className="mb-4 p-4 shadow-sm border-0">
         <Row>
-          <Col xs={12} md={3} className="text-center mb-3 mb-md-0">
-            <Image
-              src={user.profilePic || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'}
-              roundedCircle
-              fluid
-              style={{ width: '120px', height: '120px' }}
-            />
+          <Col xs={12} md={3} className="text-center mb-3 mb-md-0 position-relative">
+            <div
+              className="position-relative d-inline-block"
+              onMouseEnter={() => setHover(true)}
+              onMouseLeave={() => setHover(false)}
+              onClick={() => setShowPicModal(true)}
+              style={{ cursor: 'pointer' }}
+            >
+              <Image
+                src={user.profilePic || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'}
+                roundedCircle
+                fluid
+                style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+              />
+              <div
+                className="position-absolute top-50 start-50 translate-middle bg-dark bg-opacity-50 text-white rounded-circle d-flex justify-content-center align-items-center"
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  display: hover ? 'flex' : 'none',
+                  fontSize: '16px',
+                }}
+              >
+                Edit
+              </div>
+            </div>
           </Col>
+
           <Col xs={12} md={9}>
             <h4 className="mb-1">@{user.username}</h4>
             <h5 className="text-muted">{user.name}</h5>
@@ -174,6 +252,42 @@ const Profile = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+      <Modal show={showPicModal} onHide={() => setShowPicModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Update Profile Picture</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="text-center mb-3">
+            <Image
+              src={user.profilePic || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'}
+              roundedCircle
+              style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+            />
+          </div>
+          <Form.Group controlId="uploadPic">
+            <Form.Label>Choose new profile picture</Form.Label>
+            <Form.Control
+              type="file"
+              accept="image/*"
+              onChange={handleProfilePicUpload}
+            />
+            <Form.Text className="text-muted">
+              Only images. Max size 5MB.
+            </Form.Text>
+          </Form.Group>
+          {user.profilePic && user.profilePic !== DEFAULT_AVATAR && (
+            <Button variant="danger" className="mt-3" onClick={handleRemoveProfilePic}>
+              Remove Current Picture
+            </Button>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowPicModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
     </Container>
   )
 }
