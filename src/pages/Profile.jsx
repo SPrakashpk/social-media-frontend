@@ -16,18 +16,15 @@ const Profile = () => {
   })
 
   const navigate = useNavigate()
-  const userId = (JSON.parse(localStorage.getItem('user'))).id
+  const userId = (JSON.parse(localStorage.getItem('user')))?.id
 
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
         const token = localStorage.getItem('chirp_token')
         const res = await API.get('/users/profile-details', {
-          // headers: {
-          //   Authorization: `Bearer ${token}`,
-          // },
-          params: {
-            id: userId,
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
         })
 

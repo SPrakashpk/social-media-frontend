@@ -27,3 +27,17 @@ export const getCurrentUser = () =>{
 export const logout = () => {
   localStorage.removeItem('chirp_token')
 }
+
+
+
+export const checkUsernameAvailability = async (username) => {
+  try {
+    const response = await axios.get(`${API_URL}/username-available/${username}`);
+    return response.data.data.available;
+  } catch (error) {
+    console.error("Username availability check failed:", error);
+    return false;
+  }
+};
+
+

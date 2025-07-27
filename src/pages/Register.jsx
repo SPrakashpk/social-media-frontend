@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Form, Button, Card, Alert } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Form, FormGroup, FormControl, Button, Card, Alert, FormText } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { register } from '../services/authService';
+import { checkUsernameAvailability } from '../services/authService';
 
 const Register = (props) => {
   const navigate = useNavigate();
@@ -11,12 +12,32 @@ const Register = (props) => {
     name: '',
     email: '',
     password: '',
+    username: '',
   });
+
+
+  const [username, setUsername] = useState('');
+  const [isAvailable, setIsAvailable] = useState(null);
+
+  useEffect(() => {
+    const check = async () => {
+      if (username.length >= 3) {
+        const available = await checkUsernameAvailability(username);
+        setIsAvailable(available);
+      } else {
+        setIsAvailable(null);
+      }
+    };
+    const delay = setTimeout(check, 500); // debounce
+    return () => clearTimeout(delay);
+  }, [formData.username]);
+
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
+    console.log('Changed:', e.target.name, e.target.value);
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -29,10 +50,10 @@ const Register = (props) => {
     setSuccess('');
 
     const registerData = await register(formData)
-    if(registerData.success){
-        props.onLoginChange(true);
-    }else{
-        setError(  'Registration failed')
+    if (registerData.success) {
+      props.onLoginChange(true);
+    } else {
+      setError('Registration failed')
     }
 
   };
@@ -69,6 +90,30 @@ const Register = (props) => {
           />
         </Form.Group>
 
+        <FormGroup controlId="username">
+          <Form.Label>Username</Form.Label>
+          <FormControl
+            type="text"
+            value={formData.username}
+            name='username'
+            placeholder='Username'
+            onChange={(e) => {
+              const val = e.target.value;
+              setFormData((prev) => ({ ...prev, username: val }));
+              setUsername(val);
+            }}
+            isInvalid={isAvailable === false}
+            isValid={isAvailable === true}
+            required
+          />
+          {isAvailable === false && (
+            <FormText className="text-danger">Username is taken</FormText>
+          )}
+          {isAvailable === true && (
+            <FormText className="text-success">Username is available</FormText>
+          )}
+        </FormGroup>
+
         <Form.Group className="mb-4" controlId="formPassword">
           <Form.Label>Password</Form.Label>
           <Form.Control
@@ -82,7 +127,7 @@ const Register = (props) => {
         </Form.Group>
 
         <div className="d-grid gap-2">
-          <Button variant="primary" type="submit">
+          <Button variant="primary" type="submit" onClick={() => navigate('/verify-otp',{state:{email:formData.email}})}>
             Sign up
           </Button>
           <Button variant="secondary" onClick={() => navigate('/')}>
