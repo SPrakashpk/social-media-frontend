@@ -6,7 +6,6 @@ import {
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import API from '../api/axios'
 import { sendMessage } from '../services/chatService'
-import User from '../../../social-media-backend/src/models/User'
 
 const Profile = () => {
   const [user, setUser] = useState(null)
