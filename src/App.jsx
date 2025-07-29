@@ -20,7 +20,7 @@ function App() {
   const handleLoginChanges = (value) => {
     setIsLoggedIn(value);
     if (value) {
-      localStorage.setItem('chirp_token', value); // save token
+      // localStorage.setItem('chirp_token', value); // save token
     } else {
       localStorage.removeItem('chirp_token'); // clear token on logout
     }
@@ -50,6 +50,7 @@ function App() {
 
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
         <Route path="/messages" element={<PrivateRoute><ChatContainer /></PrivateRoute>} />
+        <Route path="/messages/:chatId" element={<PrivateRoute><ChatContainer /></PrivateRoute>} />
       </Routes>
     </Router></>
   );

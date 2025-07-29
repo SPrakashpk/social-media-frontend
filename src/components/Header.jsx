@@ -49,7 +49,11 @@ const Header = ({ isLoggedIn, onLogout }) => {
                 </Badge>
               </div>
 
-              <div className="d-flex align-items-center gap-2">
+              <div
+                className="d-flex align-items-center gap-2"
+                style={{ cursor: 'pointer' }}
+                onClick={() => navigate(`/profile/${user.id || user._id}`)}
+              >
                 <Image
                   src={user.avatar || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'}
                   roundedCircle

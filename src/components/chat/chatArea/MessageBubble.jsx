@@ -14,11 +14,10 @@ export const MessageBubble = ({ message, currentUser, sender }) => {
     });
   };
 
-console.log('Message:', message);
+
 
 
   return (
-  
     <div className={`d-flex mb-3 ${isOwn ? 'justify-content-end' : 'justify-content-start'}`}>
       <div className={`${isOwn ? 'order-2' : 'order-1'}`} style={{ maxWidth: '70%' }}>
         {!isOwn && sender && (
@@ -52,7 +51,7 @@ console.log('Message:', message);
                   // Prefer message.status, fallback to isRead for backward compatibility
                   const status = message.status || (message.isRead ? 'read' : undefined);
                   if (status === 'read') {
-                    return <CheckCheck size={14} className="text-info" title="Read" />;
+                    return <CheckCheck size={14} className="text-primary" title="Read" style={{ color: '#2196f3' }} />;
                   } else if (status === 'delivered') {
                     return <CheckCheck size={14} className="text-secondary" title="Delivered" />;
                   } else if (status === 'sent') {

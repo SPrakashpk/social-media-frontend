@@ -3,9 +3,9 @@ import Card from 'react-bootstrap/Card'
 import Button from 'react-bootstrap/Button'
 import Form from 'react-bootstrap/Form'
 import Modal from 'react-bootstrap/Modal'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FaPhotoVideo, FaTimes } from 'react-icons/fa'
-import { createPost } from '../services/postService.js'
+import { createPost, fetchFeedPosts, fetchExplorePosts, likePost, commentOnPost } from '../services/postService.js'
 import { Spinner, Tab, Tabs } from 'react-bootstrap'
 
 const posts = [
@@ -152,10 +152,38 @@ An awe-inspiring visualization of physics at its limits, crafted with real equat
 
 const Feed = () => {
   const [showModal, setShowModal] = useState(false)
-  const [postText, setPostText] = useState('')
+  const [postText, setPostText] = useState('');
+  const [posts, setPosts] = useState([]);
   const [mediaFiles, setMediaFiles] = useState([]);
   const [isPosting, setIsPosting] = useState(false);
+  const [currentUser] = useState(JSON.parse(localStorage.getItem('user')));
+  const [activeTab, setActiveTab] = useState('feed');
 
+  const fetchFeed = async () => {
+    try {
+      const res = await fetchFeedPosts(currentUser.id);
+      setPosts(res.data);
+    } catch (err) {
+      console.error('Failed to fetch feed posts:', err);
+    }
+  };
+
+  const fetchExplore = async () => {
+    try {
+      const res = await fetchExplorePosts(currentUser.id);
+      setPosts(res.data);
+    } catch (err) {
+      console.error('Failed to fetch explore posts:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'feed') {
+      fetchFeed();
+    } else if (activeTab === 'explore') {
+      fetchExplore();
+    }
+  }, [activeTab]);
 
   const handleMediaChange = (e) => {
     setMediaFiles([...mediaFiles, ...Array.from(e.target.files)])
@@ -170,7 +198,7 @@ const Feed = () => {
     setIsPosting(true);
     try {
       const newPost = await createPost({
-        userId: 'SiItjsSwPp88',
+        userId: currentUser.id,
         text: postText,
         mediaFiles: mediaFiles,
       });
@@ -205,15 +233,87 @@ const Feed = () => {
     </Card.Body>
   </Card>
 
-  <Tabs defaultActiveKey="feed" id="feed-tabs" className="mb-3">
+  <Tabs
+    activeKey={activeTab}
+    onSelect={k => setActiveTab(k)}
+    id="feed-tabs"
+    className="mb-3"
+  >
     <Tab eventKey="feed" title="Your Feed">
-      {posts.map((post, idx) => (
-        <PostCard key={idx} {...post} />
-      ))}
+      {posts.length === 0 ? (
+        <p className="text-muted">No posts yet.</p>
+      ) : (
+        posts.map((post, idx) => (
+          <PostCard
+            key={idx}
+            {...post}
+            onLike={async () => {
+              try {
+                await likePost(post._id);
+                setPosts(posts => posts.map((p, i) => i === idx ? {
+                  ...p,
+                  likes: p.likes.includes(currentUser.id)
+                    ? p.likes.filter(id => id !== currentUser.id)
+                    : [...p.likes, currentUser.id]
+                } : p));
+              } catch (err) {
+                console.error('Failed to like post:', err);
+              }
+            }}
+            onComment={async () => {
+              const text = prompt('Enter your comment:');
+              if (!text) return;
+              try {
+                const newComment = await commentOnPost(post._id, text);
+                setPosts(posts => posts.map((p, i) => i === idx ? {
+                  ...p,
+                  comments: [...p.comments, newComment]
+                } : p));
+              } catch (err) {
+                console.error('Failed to comment:', err);
+              }
+            }}
+          />
+        ))
+      )}
     </Tab>
     <Tab eventKey="explore" title="Explore">
-      <p className="text-muted">Explore content will go here.</p>
-      {/* You can map another array like explorePosts once implemented */}
+      {posts.length === 0 ? (
+        <p className="text-muted">No explore posts yet.</p>
+      ) : (
+        posts.map((post, idx) => (
+          <PostCard
+            key={idx}
+            {...post}
+            onLike={async () => {
+              try {
+                await likePost(post._id);
+                setPosts(posts => posts.map((p, i) => i === idx ? {
+                  ...p,
+                  likes: p.likes.includes(currentUser.id)
+                    ? p.likes.filter(id => id !== currentUser.id)
+                    : [...p.likes, currentUser.id]
+                } : p));
+              } catch (err) {
+                console.error('Failed to like post:', err);
+              }
+            }}
+            onComment={async () => {
+              const text = prompt('Enter your comment:');
+              if (!text) return;
+              try {
+                const newComment = await commentOnPost(post._id, text);
+                setPosts(posts => posts.map((p, i) => i === idx ? {
+                  ...p,
+                  comments: [...p.comments, newComment]
+                } : p));
+              } catch (err) {
+                console.error('Failed to comment:', err);
+              }
+            }}
+          />
+        ))
+      )}
     </Tab>
   </Tabs>
 

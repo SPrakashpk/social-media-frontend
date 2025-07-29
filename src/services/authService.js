@@ -44,7 +44,7 @@ export const logout = () => {
 
 export const checkUsernameAvailability = async (username) => {
   try {
-    const response = await axios.get(`${API_URL}/username-available/${username}`);
+    const response = await API.get(`/username-available/${username}`);
     return response.data.data.available;
   } catch (error) {
     console.error("Username availability check failed:", error);

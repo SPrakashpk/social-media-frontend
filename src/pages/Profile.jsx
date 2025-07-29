@@ -12,7 +12,7 @@ const Profile = () => {
   const [user, setUser] = useState(null)
   const [posts, setPosts] = useState([])
   const [showModal, setShowModal] = useState(false)
-  const [editData, setEditData] = useState({ name: '', bio: '', profilePic: '' });
+  const [editData, setEditData] = useState({ name: '', bio: '', profilePic: '', accountType: 'public' });
   const [hover, setHover] = useState(false)
   const [showPicModal, setShowPicModal] = useState(false)
   const [isOwnProfile, setIsOwnProfile] = useState(true);
@@ -36,12 +36,14 @@ const Profile = () => {
     const fetchProfileData = async () => {
       try {
         const res = await getUserProfile(profileId);
-        setUser(res.data.data);
-        setPosts(res.data.data.posts || []);
-        setFollowersCount(res.data.data.followers?.length || 0);
-        setFollowingCount(res.data.data.following?.length || 0);
+        const data = res.data.data;
+        setUser(data);
+        setPosts(data.posts || []);
+        setFollowersCount(data.followersCount || 0);
+        setFollowingCount(data.followingCount || 0);
         setIsOwnProfile(profileId === userId);
-        setIsFollowing(res.data.data.followers?.includes(userId));
+        // If you want to check if current user is following, you may need a new field in response
+        setIsFollowing(data.isCurrentUserFollowing || false);
       } catch (err) {
         console.error('Failed to fetch profile data:', err);
       }
@@ -103,6 +105,7 @@ const Profile = () => {
       name: user.name || '',
       bio: user.bio || '',
       profilePic: user.profilePic || '',
+      accountType: user.accountType || 'public',
     })
     setShowModal(true)
   }
@@ -114,6 +117,7 @@ const Profile = () => {
         name: editData.name,
         bio: editData.bio,
         profilePic: editData.profilePic,
+        accountType: editData.accountType,
       }
 
       const res = await API.put('/users/me', updated, {
@@ -147,7 +151,8 @@ const Profile = () => {
     }
 
     const formData = new FormData()
-    formData.append('profilePic', file)
+    formData.append('profilePic', file);
+    formData.append('userId', currentUser.id);
 
     try {
       const token = localStorage.getItem('chirp_token')
@@ -234,7 +239,7 @@ const Profile = () => {
             <h5 className="text-muted">{user.name}</h5>
             <p className="mt-2">{user.bio}</p>
             <div className="d-flex gap-4 mb-3">
-              <span><strong>{posts.length}</strong> Posts</span>
+              <span><strong>{user.postCount ?? posts.length}</strong> Posts</span>
               <span style={{ cursor: 'pointer' }} onClick={openFollowersModal}>
                 <strong>{followersCount}</strong> Followers
               </span>
@@ -366,6 +371,16 @@ const Profile = () => {
                 value={editData.profilePic}
                 onChange={(e) => setEditData({ ...editData, profilePic: e.target.value })}
               />
+            </Form.Group>
+            <Form.Group controlId="editAccountType" className="mb-3">
+              <Form.Label>Account Type</Form.Label>
+              <Form.Select
+                value={editData.accountType}
+                onChange={e => setEditData({ ...editData, accountType: e.target.value })}
+              >
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </Form.Select>
             </Form.Group>
           </Form>
         </Modal.Body>

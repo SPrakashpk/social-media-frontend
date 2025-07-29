@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { Sidebar } from './sidebar/ChatSidebar';
 import { ChatArea } from './chatArea/ChatArea';
 import { UserRecommendations } from './modals/UserRecommendation';
@@ -7,6 +8,7 @@ import { socketService } from '../../services/socketService';
 import { getCurrentUser } from '../../services/authService';
 
 export const ChatContainer = () => {
+  const { chatId } = useParams();
   const [chatState, setChatState] = useState({
     chats: [],
     messages: {},
@@ -25,11 +27,18 @@ export const ChatContainer = () => {
       try {
         const chatListData = await getChatList(chatState.currentUser.id);
         const formattedChats = chatListData.data;
-
-        setChatState(prev => ({
-          ...prev,
-          chats: formattedChats,
-        }));
+        setChatState(prev => {
+          // If chatId is present in URL and valid, set as selectedChatId
+          let selected = prev.selectedChatId;
+          if (chatId && formattedChats.some(c => c._id === chatId)) {
+            selected = chatId;
+          }
+          return {
+            ...prev,
+            chats: formattedChats,
+            selectedChatId: selected,
+          };
+        });
       } catch (err) {
         console.error('Error fetching chats:', err);
       }
@@ -37,13 +46,11 @@ export const ChatContainer = () => {
 
     fetchChats();
 
-   
-
     return () => {
       socketService.removeAllListeners();
       socketService.disconnect();
     };
-  }, [chatState.currentUser.id]);
+  }, [chatState.currentUser.id, chatId]);
 
   const handleChatSelect = useCallback((chatId) => {
     setChatState(prev => {
@@ -61,30 +68,14 @@ export const ChatContainer = () => {
   const handleSendMessage = useCallback((content) => {
     if (!chatState.selectedChatId || !chatState.currentUser) return;
 
-    const newMessage = {
-      id: Date.now().toString(),
-      senderId: chatState.currentUser.id,
+    // Only emit to socket, do not update local state here. Let socket event update messages for all users including sender.
+    socketService.sendMessage({
       chatId: chatState.selectedChatId,
+      senderId: chatState.currentUser.id,
       content,
-      timestamp: new Date(),
-      isRead: false,
       type: 'text',
-    };
-
-    setChatState(prev => ({
-      ...prev,
-      messages: {
-        ...prev.messages,
-        [prev.selectedChatId]: [...(prev.messages[prev.selectedChatId] || []), newMessage]
-      },
-      chats: prev.chats.map(chat =>
-        chat._id === prev.selectedChatId
-          ? { ...chat, lastMessage: newMessage, updatedAt: new Date() }
-          : chat
-      )
-    }));
-
-    socketService.sendMessage(newMessage);
+      mentions: [],
+    });
   }, [chatState.selectedChatId, chatState.currentUser]);
 
   const handleSearchChange = useCallback((query) => {

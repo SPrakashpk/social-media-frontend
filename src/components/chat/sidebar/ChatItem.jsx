@@ -3,23 +3,25 @@ import { Row, Col, Badge } from 'react-bootstrap';
 
 export const ChatItem = ({ chat, currentUser, isSelected, onClick }) => {
   const otherParticipant = chat.members.find(p => p._id !== currentUser.id);
-  const displayName = chat.isGroup ? chat.groupName : otherParticipant?.name;
+  const displayName = chat.isGroup ? chat.name : otherParticipant?.name;
   const displayAvatar = (chat.isGroup ? chat.groupAvatar : otherParticipant?.avatar) || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png';
 
-  const formatTime = (dateValue) => {
-    const date = new Date(dateValue);
+  const formatTime = (isoString) => {
+    console.log('format time : ', isoString)
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '';
     const now = new Date();
     const diff = now - date;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (isNaN(diff)) return ''; // If invalid date
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
 
     if (days > 0) return `${days}d`;
     if (hours > 0) return `${hours}h`;
-    
-    const minutes = Math.floor(diff / (1000 * 60));
-    return minutes > 0 ? `${minutes}m` : 'now';
+    if (minutes > 0) return `${minutes}m`;
+    return 'now';
   };
 
   const truncateMessage = (message, maxLength = 35) => {
@@ -27,13 +29,15 @@ export const ChatItem = ({ chat, currentUser, isSelected, onClick }) => {
     return message.length > maxLength ? `${message.substring(0, maxLength)}...` : message;
   };
 
-  const lastMsg = chat.lastMessage;
+  const lastMsg = chat.latestMessage;
+  console.log(chat)
   const isOwnMsg = lastMsg?.sender === currentUser.id || lastMsg?.sender?._id === currentUser.id;
 
   return (
     <div
       onClick={onClick}
       className={`chat-item p-3 ${isSelected ? 'active' : ''}`}
+      data-last={chat.isLast ? 'true' : undefined}
     >
       <Row className="align-items-center">
         <Col xs="auto">
@@ -56,33 +60,24 @@ export const ChatItem = ({ chat, currentUser, isSelected, onClick }) => {
           <Row className="justify-content-between align-items-start">
             <Col>
               <h6 className="mb-0 fw-semibold text-truncate">{displayName}</h6>
+              {/* Last message text below name */}
+              {lastMsg?.content && (
+                <small className="text-muted text-truncate d-block" style={{ maxWidth: 180 }}>
+                  {lastMsg.content}
+                </small>
+              )}
             </Col>
-            {lastMsg?.timestamp && (
+
+            {lastMsg?.createdAt && (
               <Col xs="auto">
-                <small className="text-muted">{formatTime(lastMsg.timestamp)}</small>
+                <small className="text-muted">{formatTime(lastMsg.createdAt)}</small>
               </Col>
             )}
           </Row>
 
+          {/* Last message hidden as per requirements */}
           <Row className="justify-content-between align-items-center mt-1">
-            <Col>
-              <small className="text-muted text-truncate d-block">
-                {lastMsg ? (
-                  <>
-                    {chat.isGroup && !isOwnMsg && (
-                      <span className="fw-medium">
-                        {chat.members.find(p => p._id === lastMsg.sender?._id)?.name?.split(' ')[0] || 'Someone'}:{' '}
-                      </span>
-                    )}
-                    {isOwnMsg && <span className="text-muted">You: </span>}
-                    {truncateMessage(lastMsg.content)}
-                  </>
-                ) : (
-                  'No messages yet!'
-                )}
-              </small>
-            </Col>
-
+            <Col></Col>
             {chat.unreadCount > 0 && (
               <Col xs="auto">
                 <Badge className="unread-badge">

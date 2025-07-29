@@ -6,7 +6,8 @@ class SocketService {
     this.isConnected = false;
   }
 
-  connect(serverUrl = import.meta.env.VITE_BACKEND_BASE_URL ) {
+  connect(serverUrl = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000') {
+    console.log('connecting to server : ', serverUrl)
     if (this.socket) return;
 
     this.socket = io(serverUrl, {
@@ -38,6 +39,7 @@ class SocketService {
 
   // Join as a user
   joinUser(userId) {
+    console.log('joining user : ', userId, this.socket)
     if (this.socket) {
       this.socket.emit('user:join', userId);
     }
@@ -45,6 +47,7 @@ class SocketService {
 
   // Send message
   sendMessage({ chatId, senderId, content, type = 'text', mentions = [] }) {
+    console.log(chatId, senderId, content, type = 'text', mentions = [])
     if (this.socket) {
       this.socket.emit('message:send', { chatId, senderId, content, type, mentions });
     }
