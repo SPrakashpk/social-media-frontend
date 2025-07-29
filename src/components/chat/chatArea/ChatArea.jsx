@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Modal } from 'react-bootstrap';
+import axios from '../../../api/axios.js';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
@@ -15,15 +17,42 @@ export const ChatArea = ({
 }) => {
   const messagesEndRef = useRef(null);
   const [messages, setMessages] = useState([]);
-  const [currentChatId, setCurrentChatId] = useState(selectedChat?._id);
-socketService.onMessage((message) => {
-  if (message.chat === currentChatId) {
-    setMessages((prevMessages) => {
-      const exists = prevMessages.some((m) => m._id === message._id);
-      return exists ? prevMessages : [...prevMessages, message];
-    });
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const navigate = useNavigate();
+  const { chatId } = useParams();
+
+// Listen for new messages
+useEffect(() => {
+  const handleMessage = (message) => {
+    if (message.chat === chatId) {
+      setMessages((prevMessages) => {
+        const exists = prevMessages.some((m) => m._id === message._id);
+        return exists ? prevMessages : [...prevMessages, message];
+      });
+    }
+  };
+  socketService.onMessage(handleMessage);
+  return () => socketService.removeAllListeners();
+}, [chatId]);
+
+// Listen for message status updates (delivered/read)
+useEffect(() => {
+  const handleStatusUpdate = ({ messageId, status }) => {
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) =>
+        msg._id === messageId ? { ...msg, status } : msg
+      )
+    );
+  };
+  if (socketService.socket) {
+    socketService.socket.on('message:status', handleStatusUpdate);
   }
-});
+  return () => {
+    if (socketService.socket) {
+      socketService.socket.off('message:status', handleStatusUpdate);
+    }
+  };
+}, []);
 
   // Scroll to bottom when messages update
 useEffect(() => {
@@ -44,11 +73,10 @@ useEffect(() => {
   // Fetch messages when chat changes
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!selectedChat?._id) return;
-      setCurrentChatId(selectedChat?._id)
+      if (!chatId) return;
       try {
         const res = await API.get('/chat/getChatMessages', {
-          params: { chatId: selectedChat._id },
+          params: { chatId },
         });
 
         if (res.data.success) {
@@ -60,7 +88,7 @@ useEffect(() => {
     };
 
     fetchMessages();
-  }, [selectedChat]);
+  }, [chatId]);
 
   if (!selectedChat) {
     return (
@@ -99,8 +127,19 @@ useEffect(() => {
   }
 
   const otherParticipant = selectedChat.members.find(p => p._id !== currentUser.id);
-  const displayName = selectedChat.isGroup ? selectedChat.groupName : otherParticipant?.name;
+  const displayName = selectedChat.isGroup ? selectedChat.name : otherParticipant?.name;
   const displayAvatar = (selectedChat.isGroup ? selectedChat.groupAvatar : otherParticipant?.avatar) || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png';
+
+  // Check if current user is admin in group
+  const isAdmin = selectedChat.isGroup && (selectedChat.admins?.some(a => a._id === currentUser.id) || selectedChat.roles?.some(r => r.user === currentUser.id && r.role === 'admin'));
+
+  const handleHeaderClick = () => {
+    if (selectedChat.isGroup) {
+      setShowMembersModal(true);
+    } else if (!selectedChat.isGroup && otherParticipant?._id) {
+      navigate(`/profile/${otherParticipant._id}`);
+    }
+  };
 
   return (
     <div className="d-flex flex-column w-100 h-100 position-relative">
@@ -108,7 +147,11 @@ useEffect(() => {
       <div className="bg-white border-bottom p-3 sticky-top">
         <Row className="align-items-center justify-content-between">
           <Col>
-            <div className="d-flex align-items-center">
+            <div
+              className="d-flex align-items-center"
+              style={{ cursor: 'pointer' }}
+              onClick={handleHeaderClick}
+            >
               <img
                 src={displayAvatar || null}
                 alt={displayName}
@@ -129,6 +172,39 @@ useEffect(() => {
               </div>
             </div>
           </Col>
+      {/* Group Members Modal */}
+      {selectedChat.isGroup && (
+        <Modal show={showMembersModal} onHide={() => setShowMembersModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Group Members</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <ul className="list-unstyled">
+              {selectedChat.members.map(member => {
+                const isMemberAdmin = (selectedChat.admins?.some(a => a._id === member._id) || selectedChat.roles?.some(r => r.user === member._id && r.role === 'admin'));
+                const isCurrent = member._id === currentUser.id;
+                return (
+                  <li key={member._id} className="d-flex align-items-center mb-2">
+                    <img src={member.avatar || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'} alt={member.name} className="rounded-circle me-2" width="32" height="32" />
+                    <span className="me-auto">
+                      {isCurrent ? 'You' : member.name}
+                      {isMemberAdmin && (
+                        <span className="badge bg-warning text-dark ms-2" style={{ fontSize: '0.7em' }}>Admin</span>
+                      )}
+                    </span>
+                    {isAdmin && !isCurrent && (
+                      <Button size="sm" variant="danger" className="ms-2">Remove</Button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            {isAdmin && (
+              <Button variant="outline-primary" className="w-100 mt-2">+ Add Member</Button>
+            )}
+          </Modal.Body>
+        </Modal>
+      )}
           <Col xs="auto">
             <div className="d-flex gap-2">
               <Button variant="outline-secondary" size="sm" className="rounded-circle p-2">

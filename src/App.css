@@ -250,3 +250,11 @@ body, html, #root {
   align-items: center;
   border-radius: 0.5rem;
 }
+
+.password-view-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}

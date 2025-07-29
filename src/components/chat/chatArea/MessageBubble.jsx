@@ -2,9 +2,10 @@ import React from 'react';
 import { Check, CheckCheck } from 'lucide-react';
 
 export const MessageBubble = ({ message, currentUser, sender }) => {
-  const isOwn = message.sender && message.sender._id === currentUser.id;
+  const isOwn = message.sender === currentUser.id || message.sender?._id === currentUser.id;
 
   const formatTime = (isoString) => {
+    if (!isoString) return ''; // fallback for safety
     const date = new Date(isoString);
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -12,6 +13,9 @@ export const MessageBubble = ({ message, currentUser, sender }) => {
       hour12: false,
     });
   };
+
+
+
 
   return (
     <div className={`d-flex mb-3 ${isOwn ? 'justify-content-end' : 'justify-content-start'}`}>
@@ -35,18 +39,28 @@ export const MessageBubble = ({ message, currentUser, sender }) => {
             {message.content}
           </p>
 
-          <div className={`d-flex align-items-center justify-content-end mt-1 ${isOwn ? 'text-white-50' : 'text-muted'
-            }`}>
+          <div className={`d-flex align-items-center justify-content-end mt-1 ${isOwn ? 'text-white-50' : 'text-muted'}`}>
             <small style={{ fontSize: '0.7rem' }}>
-              {formatTime(message.createdAt)}
+              {message.createdAt ? formatTime(message.createdAt) : ''}
             </small>
+
             {isOwn && (
               <div className="ms-1">
-                {message.isRead ? (
-                  <CheckCheck size={14} className="text-info" />
-                ) : (
-                  <Check size={14} />
-                )}
+                {/* Message status icons: sent, delivered, read */}
+                {(() => {
+                  // Prefer message.status, fallback to isRead for backward compatibility
+                  const status = message.status || (message.isRead ? 'read' : undefined);
+                  if (status === 'read') {
+                    return <CheckCheck size={14} className="text-primary" title="Read" style={{ color: '#2196f3' }} />;
+                  } else if (status === 'delivered') {
+                    return <CheckCheck size={14} className="text-secondary" title="Delivered" />;
+                  } else if (status === 'sent') {
+                    return <Check size={14} className="text-secondary" title="Sent" />;
+                  } else {
+                    // fallback: show single check if delivered/read not available
+                    return <Check size={14} className="text-secondary" title="Sent" />;
+                  }
+                })()}
               </div>
             )}
           </div>

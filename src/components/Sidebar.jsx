@@ -1,7 +1,27 @@
-import { Navbar, Nav, Form, FormControl } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Navbar, Nav } from "react-bootstrap";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { getChatList } from "../services/chatService";
 
 const Sidebar = () => {
+  const userId = JSON.parse(localStorage.getItem('user'))?.id;
+  const [groupChats, setGroupChats] = useState([]);
+  const navigate = useNavigate();
+  const { chatId } = useParams();
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const res = await getChatList(userId);
+        const groups = (res.data || []).filter(chat => chat.isGroup);
+        setGroupChats(groups);
+      } catch (err) {
+        setGroupChats([]);
+      }
+    };
+    if (userId) fetchGroups();
+  }, [userId]);
+
   return (
     <Navbar
       bg="white"
@@ -13,8 +33,11 @@ const Sidebar = () => {
         <Nav.Link as={Link} to="/" className="text-dark pl-40px">
           Home
         </Nav.Link>
-        <Nav.Link as={Link} to="/profile" className="text-dark pl-40px">
+        <Nav.Link as={Link} to={`/profile/${userId}`} className="text-dark pl-40px">
           Profile
+        </Nav.Link>
+        <Nav.Link as={Link} to={`/profile/j8kCD0CdihXt`} className="text-dark pl-40px">
+          ganesh
         </Nav.Link>
         <Nav.Link as={Link} to="/messages" className="text-dark pl-40px">
           Messages
@@ -27,10 +50,19 @@ const Sidebar = () => {
       <div className="mt-4 w-100">
         <div className="fw-semibold mb-2 pl-40px">Groups</div>
         <Nav className="flex-column">
-          <Nav.Link className="text-dark pl-40px">Dog Lovers</Nav.Link>
-          <Nav.Link className="text-dark pl-40px">GamerZzZ</Nav.Link>
-          <Nav.Link className="text-dark pl-40px">Travel Girls</Nav.Link>
-          <Nav.Link className="text-dark pl-40px">cat memez</Nav.Link>
+          {groupChats.length === 0 && (
+            <Nav.Link className="text-muted pl-40px" disabled>No groups</Nav.Link>
+          )}
+          {groupChats.map(group => (
+            <Nav.Link
+              key={group._id}
+              className={`text-dark pl-40px${chatId === group._id ? ' active' : ''}`}
+              as={Link}
+              to={`/messages/${group._id}`}
+            >
+              {group.name || 'Unnamed Group'}
+            </Nav.Link>
+          ))}
         </Nav>
       </div>
     </Navbar>
