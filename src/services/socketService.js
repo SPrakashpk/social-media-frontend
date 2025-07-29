@@ -6,8 +6,10 @@ class SocketService {
     this.isConnected = false;
   }
 
+
   connect(serverUrl = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000') {
     console.log('connecting to server : ', serverUrl)
+
     if (this.socket) return;
 
     this.socket = io(serverUrl, {
