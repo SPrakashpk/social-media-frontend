@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
+import axios from '../../../api/axios.js';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
@@ -16,14 +16,39 @@ export const ChatArea = ({
   const messagesEndRef = useRef(null);
   const [messages, setMessages] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(selectedChat?._id);
-socketService.onMessage((message) => {
-  if (message.chat === currentChatId) {
-    setMessages((prevMessages) => {
-      const exists = prevMessages.some((m) => m._id === message._id);
-      return exists ? prevMessages : [...prevMessages, message];
-    });
+
+// Listen for new messages
+useEffect(() => {
+  const handleMessage = (message) => {
+    if (message.chat === currentChatId) {
+      setMessages((prevMessages) => {
+        const exists = prevMessages.some((m) => m._id === message._id);
+        return exists ? prevMessages : [...prevMessages, message];
+      });
+    }
+  };
+  socketService.onMessage(handleMessage);
+  return () => socketService.removeAllListeners();
+}, [currentChatId]);
+
+// Listen for message status updates (delivered/read)
+useEffect(() => {
+  const handleStatusUpdate = ({ messageId, status }) => {
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) =>
+        msg._id === messageId ? { ...msg, status } : msg
+      )
+    );
+  };
+  if (socketService.socket) {
+    socketService.socket.on('message:status', handleStatusUpdate);
   }
-});
+  return () => {
+    if (socketService.socket) {
+      socketService.socket.off('message:status', handleStatusUpdate);
+    }
+  };
+}, []);
 
   // Scroll to bottom when messages update
 useEffect(() => {

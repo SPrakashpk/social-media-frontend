@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../api/axios';
 import { Form, Button, Card, Alert, Container } from 'react-bootstrap';
 import { configDotenv } from 'dotenv';
 

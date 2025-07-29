@@ -148,7 +148,7 @@ export const ChatContainer = () => {
     : [];
 
   return (
-    <div className="d-flex w-100" style={{ maxHeight: '100vh' }}>
+    <div className="d-flex w-100" style={{ maxHeight: '100vh',paddingTop: '70px', overflow: 'hidden' }}>
       <div className="border-end bg-light" style={{ width: '300px' }}>
         <Sidebar
           chats={chatState.chats}

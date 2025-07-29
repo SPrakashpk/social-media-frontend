@@ -1,44 +1,102 @@
 import React, { useEffect, useState } from 'react'
+import { followUser, unfollowUser, getFollowers, getFollowing, getUserProfile } from '../services/userService'
 import {
   Card, Button, Image, Row, Col, Container, Modal, Form
 } from 'react-bootstrap'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import API from '../api/axios'
+import { sendMessage } from '../services/chatService'
+import User from '../../../social-media-backend/src/models/User'
 
 const Profile = () => {
   const [user, setUser] = useState(null)
   const [posts, setPosts] = useState([])
   const [showModal, setShowModal] = useState(false)
-  const [editData, setEditData] = useState({
-    name: '',
-    bio: '',
-    profilePic: '',
-  });
+  const [editData, setEditData] = useState({ name: '', bio: '', profilePic: '' });
   const [hover, setHover] = useState(false)
   const [showPicModal, setShowPicModal] = useState(false)
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [followersList, setFollowersList] = useState([]);
+  const [followingList, setFollowingList] = useState([]);
 
 
   const navigate = useNavigate()
-  const userId = (JSON.parse(localStorage.getItem('user')))?.id
+  // Get profileId from URL or props if needed, fallback to current user
+  const currentUser = JSON.parse(localStorage.getItem('user'));
+  const userId = currentUser?.id;
+  // For demo, assume viewing own profile; replace with route param if needed
+  const { id: profileId } = useParams();
 
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const token = localStorage.getItem('chirp_token')
-        const res = await API.get('/users/profile-details', {
-          params: { id: userId },
-        })
-
-        setUser(res.data.data)
-        setPosts(res.data.data.posts)
+        const res = await getUserProfile(profileId);
+        setUser(res.data.data);
+        setPosts(res.data.data.posts || []);
+        setFollowersCount(res.data.data.followers?.length || 0);
+        setFollowingCount(res.data.data.following?.length || 0);
+        setIsOwnProfile(profileId === userId);
+        setIsFollowing(res.data.data.followers?.includes(userId));
       } catch (err) {
-        console.error('Failed to fetch profile data:', err)
-
+        console.error('Failed to fetch profile data:', err);
       }
-    }
+    };
+    fetchProfileData();
+  }, [profileId, userId]);
 
-    fetchProfileData()
-  }, [navigate])
+  const handleFollow = async () => {
+    try {
+      await followUser(profileId);
+      setIsFollowing(true);
+      setFollowersCount(followersCount + 1);
+    } catch (err) {
+      console.error('Follow failed:', err);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    try {
+      await unfollowUser(profileId);
+      setIsFollowing(false);
+      setFollowersCount(followersCount - 1);
+    } catch (err) {
+      console.error('Unfollow failed:', err);
+    }
+  };
+
+  const handleMessage = async () => {
+    try {
+    const data = await sendMessage(currentUser.id, profileId, ''); // Empty message to just open chat
+    navigate(`/chat/${data.chatId}`);
+  } catch (err) {
+    console.error("Failed to initiate chat:", err);
+  }
+  }
+
+  const openFollowersModal = async () => {
+    try {
+      const res = await getFollowers(profileId);
+      setFollowersList(res.data.data);
+      setShowFollowersModal(true);
+    } catch (err) {
+      console.error('Failed to fetch followers:', err);
+    }
+  };
+
+  const openFollowingModal = async () => {
+    try {
+      const res = await getFollowing(profileId);
+      setFollowingList(res.data.data);
+      setShowFollowingModal(true);
+    } catch (err) {
+      console.error('Failed to fetch following:', err);
+    }
+  };
 
   const handleEditClick = () => {
     setEditData({
@@ -132,14 +190,14 @@ const Profile = () => {
 
   return (
     <Container className="py-4">
-      <Button variant="link" onClick={() => navigate('/')} className="mb-3">
+      <Button variant="link" onClick={() => navigate('/home')} className="mb-3">
         ← Back to Home
       </Button>
 
       <Card className="mb-4 p-4 shadow-sm border-0">
         <Row>
           <Col xs={12} md={3} className="text-center mb-3 mb-md-0 position-relative">
-            <div
+            {isOwnProfile?(<div
               className="position-relative d-inline-block"
               onMouseEnter={() => setHover(true)}
               onMouseLeave={() => setHover(false)}
@@ -163,7 +221,12 @@ const Profile = () => {
               >
                 Edit
               </div>
-            </div>
+            </div>):(<Image
+                src={user.profilePic || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'}
+                roundedCircle
+                fluid
+                style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+              />)}
           </Col>
 
           <Col xs={12} md={9}>
@@ -171,13 +234,76 @@ const Profile = () => {
             <h5 className="text-muted">{user.name}</h5>
             <p className="mt-2">{user.bio}</p>
             <div className="d-flex gap-4 mb-3">
-              <span><strong>{user.postCount}</strong> Posts</span>
-              <span><strong>{user.followersCount}</strong> Followers</span>
-              <span><strong>{user.followingCount}</strong> Following</span>
+              <span><strong>{posts.length}</strong> Posts</span>
+              <span style={{ cursor: 'pointer' }} onClick={openFollowersModal}>
+                <strong>{followersCount}</strong> Followers
+              </span>
+              <span style={{ cursor: 'pointer' }} onClick={openFollowingModal}>
+                <strong>{followingCount}</strong> Following
+              </span>
             </div>
-            <Button variant="primary" size="sm" onClick={handleEditClick}>
-              Edit Profile
-            </Button>
+            {isOwnProfile ? (
+              <Button variant="primary" size="sm" onClick={handleEditClick}>
+                Edit Profile
+              </Button>
+            ) : (
+              <>
+                {isFollowing ? (
+                  <Button variant="outline-secondary" size="sm" onClick={handleUnfollow}>
+                    Unfollow
+                  </Button>
+                ) : (
+                  <Button variant="primary" size="sm" onClick={handleFollow}>
+                    Follow
+                  </Button>
+                )}
+                <Button variant="outline-primary" size="sm" className="ms-2" onClick={handleMessage}>
+                  Message
+                </Button>
+              </>
+            )}
+            {/* Followers Modal */}
+            <Modal show={showFollowersModal} onHide={() => setShowFollowersModal(false)} centered>
+              <Modal.Header closeButton>
+                <Modal.Title>Followers</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                {followersList.length === 0 ? (
+                  <div className="text-muted">No followers yet.</div>
+                ) : (
+                  <ul className="list-unstyled">
+                    {followersList.map(f => (
+                      <Link to={`/profile/${f._id}`}>
+                        <img src={f.avatar || DEFAULT_AVATAR} alt="avatar" style={{ width: 32, height: 32, borderRadius: '50%', marginRight: 10 }} />
+                        <span>@{f.username}</span>
+                      </Link>
+
+                    ))}
+                  </ul>
+                )}
+              </Modal.Body>
+            </Modal>
+
+            {/* Following Modal */}
+            <Modal show={showFollowingModal} onHide={() => setShowFollowingModal(false)} centered>
+              <Modal.Header closeButton>
+                <Modal.Title>Following</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                {followingList.length === 0 ? (
+                  <div className="text-muted">Not following anyone yet.</div>
+                ) : (
+                  <ul className="list-unstyled">
+                    {followingList.map(f => (
+                      <Link to={`/profile/${f._id}`}>
+                        <img src={f.avatar || DEFAULT_AVATAR} alt="avatar" style={{ width: 32, height: 32, borderRadius: '50%', marginRight: 10 }} />
+                        <span>@{f.username}</span>
+                      </Link>
+                    ))}
+                  </ul>
+                )}
+              </Modal.Body>
+            </Modal>
           </Col>
         </Row>
       </Card>

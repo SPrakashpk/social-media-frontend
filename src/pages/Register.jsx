@@ -13,6 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { EyeFill, EyeSlashFill, Google } from 'react-bootstrap-icons';
 import { register, checkUsernameAvailability } from '../services/authService';
+import { toast } from 'react-toastify';
 
 const Register = (props) => {
   const navigate = useNavigate();

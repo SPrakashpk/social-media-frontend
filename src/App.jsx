@@ -46,6 +46,8 @@ function App() {
         {/* Private routes */}
         <Route path="/home" element={<PrivateRoute><HomeLayout /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+        <Route path="/profile/:id" element={<PrivateRoute><Profile/></PrivateRoute>} />
+
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
         <Route path="/messages" element={<PrivateRoute><ChatContainer /></PrivateRoute>} />
       </Routes>
