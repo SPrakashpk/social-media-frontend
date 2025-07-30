@@ -1,6 +1,4 @@
-import Header from '../Header'
 import Sidebar from '../Sidebar'
-import Rightbar from '../Rightbar'
 import Feed from '../../pages/HomeFeed'
 
 const HomeLayout = () => (
