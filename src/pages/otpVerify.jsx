@@ -32,7 +32,6 @@ const OtpVerify = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Failed to resend OTP');
 
-            console.log('OTP resent successfully:', data.message);
             setSuccess('OTP resent successfully');
             setError('');
         } catch (err) {

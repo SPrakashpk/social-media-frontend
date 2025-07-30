@@ -7,7 +7,6 @@ export const ChatItem = ({ chat, currentUser, isSelected, onClick }) => {
   const displayAvatar = (chat.isGroup ? chat.groupAvatar : otherParticipant?.avatar) || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png';
 
   const formatTime = (isoString) => {
-    console.log('format time : ', isoString)
     if (!isoString) return '';
     const date = new Date(isoString);
     if (isNaN(date.getTime())) return '';
@@ -30,7 +29,6 @@ export const ChatItem = ({ chat, currentUser, isSelected, onClick }) => {
   };
 
   const lastMsg = chat.latestMessage;
-  console.log(chat)
   const isOwnMsg = lastMsg?.sender === currentUser.id || lastMsg?.sender?._id === currentUser.id;
 
   return (

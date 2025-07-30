@@ -1,3 +1,4 @@
+import API from '../api/axios';
 import axios from '../api/axios';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL + '/auth'
@@ -44,7 +45,7 @@ export const logout = () => {
 
 export const checkUsernameAvailability = async (username) => {
   try {
-    const response = await API.get(`/username-available/${username}`);
+    const response = await API.get(`/auth/username-available/${username}`);
     return response.data.data.available;
   } catch (error) {
     console.error("Username availability check failed:", error);

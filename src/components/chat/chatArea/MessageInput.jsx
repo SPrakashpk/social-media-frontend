@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { socketService } from '../../../services/socketService.js';
 import { Form, Button, InputGroup } from 'react-bootstrap';
 import { Send, Paperclip, Smile } from 'lucide-react';
 
@@ -26,11 +27,16 @@ export const MessageInput = ({ onSendMessage, disabled = false }) => {
 
   const handleInputChange = (e) => {
     setMessage(e.target.value);
-    
     // Auto-resize textarea
     const textarea = e.target;
     textarea.style.height = 'auto';
     textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    // Typing indicator
+    if (e.target.value.trim()) {
+      socketService.sendTypingStart(window.location.pathname.split('/').pop(), window.localStorage.getItem('userId'));
+    } else {
+      socketService.sendTypingStop(window.location.pathname.split('/').pop(), window.localStorage.getItem('userId'));
+    }
   };
 
   return (

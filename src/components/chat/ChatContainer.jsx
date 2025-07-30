@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import { Sidebar } from './sidebar/ChatSidebar';
 import { ChatArea } from './chatArea/ChatArea';
@@ -6,43 +7,37 @@ import { UserRecommendations } from './modals/UserRecommendation';
 import { getChatList } from '../../services/chatService';
 import { socketService } from '../../services/socketService';
 import { getCurrentUser } from '../../services/authService';
+import API from '../../api/axios';
 
 export const ChatContainer = () => {
   const { chatId } = useParams();
+  const navigate = useNavigate();
   const [chatState, setChatState] = useState({
     chats: [],
     messages: {},
-    selectedChatId: null,
+    selectedChatId: chatId || null,
     currentUser: getCurrentUser(),
     searchQuery: '',
     isUserRecommendationsOpen: false,
   });
-
+  const fetchChats = async () => {
+    try {
+      const chatListData = await getChatList(chatState.currentUser.id);
+      const formattedChats = chatListData.data;
+      setChatState(prev => ({
+        ...prev,
+        chats: formattedChats,
+      }));
+    } catch (err) {
+      console.error('Error fetching chats:', err);
+    }
+  };
   // Fetch chats and connect socket
   useEffect(() => {
     socketService.connect();
     socketService.joinUser(chatState.currentUser.id);
 
-    const fetchChats = async () => {
-      try {
-        const chatListData = await getChatList(chatState.currentUser.id);
-        const formattedChats = chatListData.data;
-        setChatState(prev => {
-          // If chatId is present in URL and valid, set as selectedChatId
-          let selected = prev.selectedChatId;
-          if (chatId && formattedChats.some(c => c._id === chatId)) {
-            selected = chatId;
-          }
-          return {
-            ...prev,
-            chats: formattedChats,
-            selectedChatId: selected,
-          };
-        });
-      } catch (err) {
-        console.error('Error fetching chats:', err);
-      }
-    };
+
 
     fetchChats();
 
@@ -50,7 +45,38 @@ export const ChatContainer = () => {
       socketService.removeAllListeners();
       socketService.disconnect();
     };
-  }, [chatState.currentUser.id, chatId]);
+  }, [chatState.currentUser.id]);
+
+  // Update selectedChatId when chatId in URL changes
+  useEffect(() => {
+    if (chatId) {
+      setChatState(prev => ({
+        ...prev,
+        selectedChatId: chatId,
+      }));
+    }
+  }, [chatId]);
+
+  // Fetch messages when selectedChatId changes
+  useEffect(() => {
+    const fetchChatMessages = async () => {
+      if (!chatState.selectedChatId) return;
+      try {
+        const res = await API.get(`/chat/messages/${chatState.selectedChatId}`);
+        setChatState(prev => ({
+          ...prev,
+          messages: {
+            ...prev.messages,
+            [chatState.selectedChatId]: res.data.messages,
+          },
+        }));
+      } catch (err) {
+        console.error('Error fetching messages:', err);
+      }
+    };
+    fetchChatMessages();
+  }, [chatState.selectedChatId]);
+
 
   const handleChatSelect = useCallback((chatId) => {
     setChatState(prev => {
@@ -99,37 +125,23 @@ export const ChatContainer = () => {
     }));
   }, []);
 
-  const handleStartChat = useCallback((user) => {
-    const existingChat = chatState.chats.find(chat =>
-      !chat.isGroup && chat.participants.some(p => p.id === user.id)
-    );
-
-    if (existingChat) {
-      handleChatSelect(existingChat.id);
-    } else {
-      const newChat = {
-        id: `chat-${Date.now()}`,
-        participants: [user, chatState.currentUser],
-        lastMessage: null,
-        unreadCount: 0,
-        isGroup: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      setChatState(prev => ({
-        ...prev,
-        chats: [newChat, ...prev.chats],
-        selectedChatId: newChat.id,
-        messages: {
-          ...prev.messages,
-          [newChat.id]: []
-        }
-      }));
+  const handleStartChat = useCallback(async (user) => {
+    // Use backend to get or create chat and return chatId
+    try {
+      const res = await sendMessage(chatState.currentUser.id, user.id, '');
+      const chatIdFromBackend = res.chatId || res.data?.chatId;
+      if (chatIdFromBackend) {
+        navigate(`/messages/${chatIdFromBackend}`);
+        setChatState(prev => ({
+          ...prev,
+          selectedChatId: chatIdFromBackend,
+        }));
+      }
+    } catch (err) {
+      console.error('Error starting chat:', err);
     }
-
     handleCloseUserRecommendations();
-  }, [chatState.chats, chatState.currentUser, handleChatSelect, handleCloseUserRecommendations]);
+  }, [chatState.currentUser, navigate, handleCloseUserRecommendations]);
 
   const availableUsers = []
 
@@ -139,7 +151,7 @@ export const ChatContainer = () => {
     : [];
 
   return (
-    <div className="d-flex w-100" style={{ maxHeight: '100vh',paddingTop: '70px', overflow: 'hidden' }}>
+    <div className="d-flex w-100" style={{ maxHeight: '100vh', paddingTop: '70px', overflow: 'hidden' }}>
       <div className="border-end bg-light" style={{ width: '300px' }}>
         <Sidebar
           chats={chatState.chats}
@@ -148,6 +160,7 @@ export const ChatContainer = () => {
           searchQuery={chatState.searchQuery}
           onChatSelect={handleChatSelect}
           onSearchChange={handleSearchChange}
+          onChatListRefresh={fetchChats}
         />
       </div>
 

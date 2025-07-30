@@ -17,57 +17,91 @@ export const ChatArea = ({
 }) => {
   const messagesEndRef = useRef(null);
   const [messages, setMessages] = useState([]);
+  const [typingUsers, setTypingUsers] = useState([]);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const navigate = useNavigate();
   const { chatId } = useParams();
 
-// Listen for new messages
-useEffect(() => {
-  const handleMessage = (message) => {
-    if (message.chat === chatId) {
-      setMessages((prevMessages) => {
-        const exists = prevMessages.some((m) => m._id === message._id);
-        return exists ? prevMessages : [...prevMessages, message];
-      });
+  // Group admin actions
+  const handleRemoveMember = async (userId) => {
+    try {
+      await API.delete(`/group/${selectedChat._id}/members/${userId}`);
+      // Optionally update UI
+    } catch (err) {
+      console.error('Failed to remove member:', err);
     }
   };
-  socketService.onMessage(handleMessage);
-  return () => socketService.removeAllListeners();
-}, [chatId]);
 
-// Listen for message status updates (delivered/read)
-useEffect(() => {
-  const handleStatusUpdate = ({ messageId, status }) => {
-    setMessages((prevMessages) =>
-      prevMessages.map((msg) =>
-        msg._id === messageId ? { ...msg, status } : msg
-      )
-    );
+  const handleAddMember = async () => {
+    // Show modal or prompt for user selection, then call API
+    // Example: await API.post(`/group/${selectedChat._id}/members`, { userId: ... })
   };
-  if (socketService.socket) {
-    socketService.socket.on('message:status', handleStatusUpdate);
-  }
-  return () => {
+
+
+  // Listen for new messages
+  useEffect(() => {
+    const handleMessage = (message) => {
+      if (message.chat === chatId) {
+        setMessages((prevMessages) => {
+          const exists = prevMessages.some((m) => m._id === message._id);
+          return exists ? prevMessages : [...prevMessages, message];
+        });
+      }
+    };
+    socketService.onMessage(handleMessage);
+    // Typing indicator
+    const handleTypingStart = ({ chatId: cId, userId }) => {
+      if (cId === chatId) setTypingUsers((prev) => [...new Set([...prev, userId])]);
+    };
+    const handleTypingStop = ({ chatId: cId, userId }) => {
+      if (cId === chatId) setTypingUsers((prev) => prev.filter((id) => id !== userId));
+    };
     if (socketService.socket) {
-      socketService.socket.off('message:status', handleStatusUpdate);
+      socketService.socket.on('typing:start', handleTypingStart);
+      socketService.socket.on('typing:stop', handleTypingStop);
     }
-  };
-}, []);
+    return () => {
+      socketService.removeAllListeners();
+      if (socketService.socket) {
+        socketService.socket.off('typing:start', handleTypingStart);
+        socketService.socket.off('typing:stop', handleTypingStop);
+      }
+    };
+  }, [chatId]);
+
+  // Listen for message status updates (delivered/read)
+  useEffect(() => {
+    const handleStatusUpdate = ({ messageId, status }) => {
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg._id === messageId ? { ...msg, status } : msg
+        )
+      );
+    };
+    if (socketService.socket) {
+      socketService.socket.on('message:status', handleStatusUpdate);
+    }
+    return () => {
+      if (socketService.socket) {
+        socketService.socket.off('message:status', handleStatusUpdate);
+      }
+    };
+  }, []);
 
   // Scroll to bottom when messages update
-useEffect(() => {
-  const el = messagesEndRef.current;
-  if (!el) return;
+  useEffect(() => {
+    const el = messagesEndRef.current;
+    if (!el) return;
 
-  const container = el.parentNode;
-  const isNearBottom =
-    container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+    const container = el.parentNode;
+    const isNearBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight < 200;
 
-  el.scrollIntoView({
-    behavior: isNearBottom ? 'smooth' : 'auto',
-    block: 'end',
-  });
-}, [messages]);
+    el.scrollIntoView({
+      behavior: isNearBottom ? 'smooth' : 'auto',
+      block: 'end',
+    });
+  }, [messages]);
 
 
   // Fetch messages when chat changes
@@ -100,7 +134,7 @@ useEffect(() => {
               width="80"
               height="80"
               fill="currentColor"
-              className="text-success"
+              className="text-primary"
               viewBox="0 0 20 20"
             >
               <path
@@ -110,13 +144,12 @@ useEffect(() => {
               />
             </svg>
           </div>
-          <h4 className="text-muted mb-2">Welcome to WhatsApp Web</h4>
           <p className="text-muted mb-4">
             Select a chat to start messaging, or create a new conversation.
           </p>
           <Button
             onClick={onOpenUserRecommendations}
-            variant="success"
+            variant="primary"
             className="rounded-pill px-4 shadow"
           >
             Send Message
@@ -172,47 +205,41 @@ useEffect(() => {
               </div>
             </div>
           </Col>
-      {/* Group Members Modal */}
-      {selectedChat.isGroup && (
-        <Modal show={showMembersModal} onHide={() => setShowMembersModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Group Members</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <ul className="list-unstyled">
-              {selectedChat.members.map(member => {
-                const isMemberAdmin = (selectedChat.admins?.some(a => a._id === member._id) || selectedChat.roles?.some(r => r.user === member._id && r.role === 'admin'));
-                const isCurrent = member._id === currentUser.id;
-                return (
-                  <li key={member._id} className="d-flex align-items-center mb-2">
-                    <img src={member.avatar || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'} alt={member.name} className="rounded-circle me-2" width="32" height="32" />
-                    <span className="me-auto">
-                      {isCurrent ? 'You' : member.name}
-                      {isMemberAdmin && (
-                        <span className="badge bg-warning text-dark ms-2" style={{ fontSize: '0.7em' }}>Admin</span>
-                      )}
-                    </span>
-                    {isAdmin && !isCurrent && (
-                      <Button size="sm" variant="danger" className="ms-2">Remove</Button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-            {isAdmin && (
-              <Button variant="outline-primary" className="w-100 mt-2">+ Add Member</Button>
-            )}
-          </Modal.Body>
-        </Modal>
-      )}
+          {/* Group Members Modal */}
+          {selectedChat.isGroup && (
+            <Modal show={showMembersModal} onHide={() => setShowMembersModal(false)} centered>
+              <Modal.Header closeButton>
+                <Modal.Title>Group Members</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                <ul className="list-unstyled">
+                  {selectedChat.members.map(member => {
+                    const isMemberAdmin = (selectedChat.admins?.some(a => a._id === member._id) || selectedChat.roles?.some(r => r.user === member._id && r.role === 'admin'));
+                    const isCurrent = member._id === currentUser.id;
+                    return (
+                      <li key={member._id} className="d-flex align-items-center mb-2">
+                        <img src={member.avatar || 'https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png'} alt={member.name} className="rounded-circle me-2" width="32" height="32" />
+                        <span className="me-auto">
+                          {isCurrent ? 'You' : member.name}
+                          {isMemberAdmin && (
+                            <span className="badge bg-warning text-dark ms-2" style={{ fontSize: '0.7em' }}>Admin</span>
+                          )}
+                        </span>
+                        {isAdmin && !isCurrent && (
+                          <Button size="sm" variant="danger" className="ms-2" onClick={() => handleRemoveMember(member._id)}>Remove</Button>)}
+                      </li>
+                    );
+                  })}
+                </ul>
+                {isAdmin && (
+                  <Button variant="outline-primary" className="w-100 mt-2" onClick={handleAddMember}>+ Add Member</Button>
+                )}
+
+              </Modal.Body>
+            </Modal>
+          )}
           <Col xs="auto">
             <div className="d-flex gap-2">
-              <Button variant="outline-secondary" size="sm" className="rounded-circle p-2">
-                <Phone size={16} />
-              </Button>
-              <Button variant="outline-secondary" size="sm" className="rounded-circle p-2">
-                <Video size={16} />
-              </Button>
               <Button variant="outline-secondary" size="sm" className="rounded-circle p-2">
                 <MoreVertical size={16} />
               </Button>
@@ -229,16 +256,34 @@ useEffect(() => {
               const sender = typeof message.sender === 'string'
                 ? selectedChat.members.find(p => p._id === message.sender)
                 : message.sender;
-
+              // Highlight mentions
+              let content = message.content;
+              if (message.mention && message.mention.length > 0) {
+                message.mention.forEach(uid => {
+                  const user = selectedChat.members.find(u => u._id === uid);
+                  if (user) {
+                    content = content.replace(new RegExp(`@${user.username}`, 'g'), `<span class='mention'>@${user.username}</span>`);
+                  }
+                });
+              }
               return (
                 <MessageBubble
                   key={message._id}
-                  message={message}
+                  message={{ ...message, content }}
                   currentUser={currentUser}
                   sender={sender}
                 />
               );
             })}
+            {/* Typing indicator */}
+            {typingUsers.length > 0 && (
+              <div className="mb-2 text-muted small">
+                {typingUsers.map(uid => {
+                  const user = selectedChat.members.find(u => u._id === uid);
+                  return user ? `${user.name} is typing...` : '';
+                }).join(' ')}
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </>
         ) : (

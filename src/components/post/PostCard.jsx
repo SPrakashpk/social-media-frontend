@@ -41,7 +41,7 @@ const PostCard = (post) => {
                     >
                         <strong>{userId?.name}</strong>
                     </span>
-                    <span className='follow'>follow</span>
+                    {/* <span className='follow' onClick={handleFollow}>follow</span> */}
                     <p className='time'>{timeString}</p>
                 </div>
 

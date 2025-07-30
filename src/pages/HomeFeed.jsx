@@ -1,154 +1,75 @@
 import PostCard from '../components/post/PostCard.jsx'
-import Card from 'react-bootstrap/Card'
-import Button from 'react-bootstrap/Button'
 import Form from 'react-bootstrap/Form'
 import Modal from 'react-bootstrap/Modal'
-import { useEffect, useState } from 'react'
+import react, { useEffect, useState } from 'react'
 import { FaPhotoVideo, FaTimes } from 'react-icons/fa'
 import { createPost, fetchFeedPosts, fetchExplorePosts, likePost, commentOnPost } from '../services/postService.js'
-import { Spinner, Tab, Tabs } from 'react-bootstrap'
+import { Card, Button, Image, Spinner, Tab, Tabs } from 'react-bootstrap';
+import { getRecommendedUsers, followUser } from '../services/userService';
 
-const posts = [
-  {
-    "_id": "i7V7Z7aaL9XK",
-    "userId": {
-      "_id": "SiItjsSwPp88",
-      "name": "Ganesh S",
-      "avatar": ""
-    },
-    "text": `🌀 “Gargantua — the monstrous black hole bending space, time, and minds.”
-An awe-inspiring visualization of physics at its limits, crafted with real equations and cinematic genius.
-#Interstellar #Gargantua #BlackHole #SpaceTime #ChristopherNolan #Astrophysics`,
-    "media": [
-      {
-        "url": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "key": "posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "type": "image",
-        "_id": "5gc0Lzyqk62j",
-        "signedUrl": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYZ45SVJOKCZ3QKS4%2F20250720%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20250720T172845Z&X-Amz-Expires=3600&X-Amz-Signature=d88ce63ad9ae06722fc8fd40bed3d6774b74ea65932aaa37cca1f7137393fafe&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject"
-      },
-      {
-        "url": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "key": "posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "type": "image",
-        "_id": "5gc0Lzyqk62j",
-        "signedUrl": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYZ45SVJOKCZ3QKS4%2F20250720%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20250720T172845Z&X-Amz-Expires=3600&X-Amz-Signature=d88ce63ad9ae06722fc8fd40bed3d6774b74ea65932aaa37cca1f7137393fafe&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject"
-      },
-      {
-        "url": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "key": "posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "type": "image",
-        "_id": "5gc0Lzyqk62j",
-        "signedUrl": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYZ45SVJOKCZ3QKS4%2F20250720%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20250720T172845Z&X-Amz-Expires=3600&X-Amz-Signature=d88ce63ad9ae06722fc8fd40bed3d6774b74ea65932aaa37cca1f7137393fafe&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject"
-      },
-      {
-        "url": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "key": "posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "type": "image",
-        "_id": "5gc0Lzyqk62j",
-        "signedUrl": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYZ45SVJOKCZ3QKS4%2F20250720%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20250720T172845Z&X-Amz-Expires=3600&X-Amz-Signature=d88ce63ad9ae06722fc8fd40bed3d6774b74ea65932aaa37cca1f7137393fafe&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject"
-      },
-      {
-        "url": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "key": "posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "type": "image",
-        "_id": "5gc0Lzyqk62j",
-        "signedUrl": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYZ45SVJOKCZ3QKS4%2F20250720%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20250720T172845Z&X-Amz-Expires=3600&X-Amz-Signature=d88ce63ad9ae06722fc8fd40bed3d6774b74ea65932aaa37cca1f7137393fafe&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject"
-      },
+function RecommendedUsersRow() {
+  const [recommendedUsers, setRecommendedUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [followed, setFollowed] = useState([]);
 
-    ],
-    "likes": [
-      "4JXdbeCMJ5ZD"
-    ],
-    "comments": [
-      {
-        "_id": "kN1oxHbdjZ5b",
-        "postId": "i7V7Z7aaL9XK",
-        "userId": {
-          "_id": "4JXdbeCMJ5ZD",
-          "name": "Prakash S",
-          "avatar": ""
-        },
-        "text": "test comment 3",
-        "createdAt": "2025-07-20T03:10:41.500Z",
-        "updatedAt": "2025-07-20T03:10:41.500Z",
-        "__v": 0
-      },
-      {
-        "_id": "dfzSho0r3eeY",
-        "postId": "i7V7Z7aaL9XK",
-        "userId": {
-          "_id": "4JXdbeCMJ5ZD",
-          "name": "Prakash S",
-          "avatar": ""
-        },
-        "text": "test comment 2- nice post!!!",
-        "createdAt": "2025-07-20T03:10:27.633Z",
-        "updatedAt": "2025-07-20T03:10:27.633Z",
-        "__v": 0
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const res = await getRecommendedUsers();
+        setRecommendedUsers(res.data.data || []);
+      } catch (err) {
+        setRecommendedUsers([]);
+      } finally {
+        setLoading(false);
       }
-    ],
-    "createdAt": "2025-07-20T03:09:41.091Z",
-    "updatedAt": "2025-07-20T03:11:31.987Z",
-    "__v": 3
-  },
-  // ...more posts
-  {
-    "_id": "i7V7Z7aaL9XK",
-    "userId": {
-      "_id": "SiItjsSwPp88",
-      "name": "Prakash Sundaramoorthy",
-      "avatar": ""
-    },
-    "text": `rafted with real equations and cinematic genius.
- #Astrophysics`,
-    "media": [
-      {
-        "url": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "key": "posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg",
-        "type": "image",
-        "_id": "5gc0Lzyqk62j",
-        "signedUrl": "https://chirp-social-media.s3.eu-north-1.amazonaws.com/posts/1752980978027_interstellar-gargantua-u4-1920x1200.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYZ45SVJOKCZ3QKS4%2F20250720%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20250720T172845Z&X-Amz-Expires=3600&X-Amz-Signature=d88ce63ad9ae06722fc8fd40bed3d6774b74ea65932aaa37cca1f7137393fafe&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject"
-      },
+    };
+    fetchUsers();
+  }, []);
+
+  const handleFollow = async (id) => {
+    try {
+      await followUser(id);
+      setFollowed((prev) => [...prev, id]);
+    } catch {}
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 80 }}>
+        <Spinner animation="border" />
+      </div>
+    );
+  }
+
+  if (!recommendedUsers.length) return null;
+
+  return (
+    <div className="mb-4 pb-2 border-bottom">
+      <div className="d-flex flex-row overflow-auto" style={{ gap: 24 }}>
+        {recommendedUsers.map((user) => (
+          <Card key={user._id} className="shadow-sm border-0 me-2" style={{ minWidth: 180, maxWidth: 180 }}>
+            <Card.Body className="d-flex flex-column align-items-center p-3">
+              <Image src={user.avatar} roundedCircle style={{ width: 56, height: 56, objectFit: 'cover' }} className="mb-2" />
+              <div className="fw-semibold mb-1">@{user.username}</div>
+              <Button
+                size="sm"
+                variant={followed.includes(user._id) ? 'outline-secondary' : 'primary'}
+                disabled={followed.includes(user._id)}
+                onClick={() => handleFollow(user._id)}
+                className="w-100"
+              >
+                {followed.includes(user._id) ? 'Following' : 'Follow'}
+              </Button>
+            </Card.Body>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 
-    ],
-    "likes": [
-      "4JXdbeCMJ5ZD"
-    ],
-    "comments": [
-      {
-        "_id": "kN1oxHbdjZ5b",
-        "postId": "i7V7Z7aaL9XK",
-        "userId": {
-          "_id": "4JXdbeCMJ5ZD",
-          "name": "Prakash S",
-          "avatar": ""
-        },
-        "text": "test comment 3",
-        "createdAt": "2025-07-20T03:10:41.500Z",
-        "updatedAt": "2025-07-20T03:10:41.500Z",
-        "__v": 0
-      },
-      {
-        "_id": "dfzSho0r3eeY",
-        "postId": "i7V7Z7aaL9XK",
-        "userId": {
-          "_id": "4JXdbeCMJ5ZD",
-          "name": "Prakash S",
-          "avatar": ""
-        },
-        "text": "test comment 2- nice post!!!",
-        "createdAt": "2025-07-20T03:10:27.633Z",
-        "updatedAt": "2025-07-20T03:10:27.633Z",
-        "__v": 0
-      }
-    ],
-    "createdAt": "2025-07-20T03:09:41.091Z",
-    "updatedAt": "2025-07-20T03:11:31.987Z",
-    "__v": 3
-  },
-]
 
 const Feed = () => {
   const [showModal, setShowModal] = useState(false)
@@ -208,6 +129,7 @@ const Feed = () => {
       setShowModal(false);
       setPostText('');
       setMediaFiles([]);
+      fetchFeed();
     } catch (err) {
       console.error('Failed to create post:', err.message);
     }
@@ -278,6 +200,7 @@ const Feed = () => {
       )}
     </Tab>
     <Tab eventKey="explore" title="Explore">
+      {/* Recommended Users Row */}
       {posts.length === 0 ? (
         <p className="text-muted">No explore posts yet.</p>
       ) : (
@@ -315,6 +238,7 @@ const Feed = () => {
         ))
       )}
     </Tab>
+
   </Tabs>
 
   <Modal show={showModal} onHide={() => setShowModal(false)} centered>
