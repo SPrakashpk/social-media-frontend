@@ -5,6 +5,9 @@ import { SearchBar } from './SearchBar';
 import { ChatItem } from './ChatItem';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { Plus } from 'lucide-react';
+import { BsPeopleFill, BsChatDotsFill } from 'react-icons/bs';
+import API from '../../../api/axios';
+
 
 export const Sidebar = ({
   chats,
@@ -45,15 +48,13 @@ export const Sidebar = ({
     if (showGroupModal && !candidatesLoaded) {
       async function fetchCandidates() {
         try {
-          const token = localStorage.getItem('chirp_token') || localStorage.getItem('token');
-          const headers = { Authorization: `Bearer ${token}` };
           const userId = currentUser._id || currentUser.id;
           const [followersRes, followingRes] = await Promise.all([
-            fetch(`/api/users/${userId}/followers`, { headers }),
-            fetch(`/api/users/${userId}/following`, { headers })
+            API.get(`/users/${userId}/followers`),
+            API.get(`/users/${userId}/following`)
           ]);
-          const followersData = await followersRes.json();
-          const followingData = await followingRes.json();
+          const followersData = followersRes.data;
+          const followingData = followingRes.data;
           // Merge and deduplicate
           const all = [...(followersData.data || []), ...(followingData.data || [])];
           const unique = Object.values(all.reduce((acc, user) => {
@@ -79,15 +80,13 @@ export const Sidebar = ({
     if (showModal && !privateCandidatesLoaded) {
       async function fetchPrivateCandidates() {
         try {
-          const token = localStorage.getItem('chirp_token') || localStorage.getItem('token');
-          const headers = { Authorization: `Bearer ${token}` };
           const userId = currentUser._id || currentUser.id;
           const [followersRes, followingRes] = await Promise.all([
-            fetch(`/api/users/${userId}/followers`, { headers }),
-            fetch(`/api/users/${userId}/following`, { headers })
+            API.get(`/users/${userId}/followers`),
+            API.get(`/users/${userId}/following`)
           ]);
-          const followersData = await followersRes.json();
-          const followingData = await followingRes.json();
+          const followersData = followersRes.data;
+          const followingData = followingRes.data;
           // Merge and deduplicate
           const all = [...(followersData.data || []), ...(followingData.data || [])];
           const unique = Object.values(all.reduce((acc, user) => {
@@ -124,27 +123,19 @@ export const Sidebar = ({
     if (!groupName || groupMembers.length === 0) return;
     setCreatingGroup(true);
     try {
-      const res = await fetch('/api/groups', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('chirp_token') || localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          name: groupName,
-          members: [...groupMembers, currentUser.id],
-          createdBy: currentUser.id,
-        }),
+      const data = await API.post('/groups', {
+        name: groupName,
+        members: [...groupMembers, currentUser.id],
+        createdBy: currentUser.id,
       });
-      const data = await res.json();
-      if (data.isGroup) {
+      if (data.data.isGroup) {
         
         setShowGroupModal(false);
         setGroupName('');
         setGroupMembers([]);
         onChatListRefresh();
       }
-      navigate(`/messages/${data._id}`);
+      navigate(`/messages/${data.data._id}`);
 
 
     } catch (err) {
@@ -157,21 +148,12 @@ export const Sidebar = ({
   const handleCreatePrivateChat = async (user) => {
     setCreatingPrivateChat(true);
     try {
-      const token = localStorage.getItem('chirp_token') || localStorage.getItem('token');
-      const res = await fetch('/api/chat/createPrivateChat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId: currentUser._id || currentUser.id,
-          targetUserId: user._id || user.id,
-        }),
+      const res = await API.post('/chat/createPrivateChat', {
+        userId: currentUser._id || currentUser.id,
+        targetUserId: user._id || user.id,
       });
-      const data = await res.json();
-      if (data.data._id) {
-        navigate(`/messages/${data.data._id}`);
+      if (res.data.data && res.data.data._id) {
+        navigate(`/messages/${res.data.data._id}`);
         onChatListRefresh();
       }
       setShowModal(false);
@@ -199,10 +181,10 @@ export const Sidebar = ({
           </div>
         </div>
         <Button variant="outline-primary" size="sm" className="rounded-circle p-1 d-flex align-items-center justify-content-center" onClick={() => setShowModal(true)} title="New Chat">
-          <Plus size={20} />
+          <BsChatDotsFill size={20} />
         </Button>
         <Button variant="outline-success" size="sm" className="rounded-circle p-1 ms-2 d-flex align-items-center justify-content-center" onClick={() => setShowGroupModal(true)} title="Create Group">
-          Create Group
+          <BsPeopleFill size={20} />
         </Button>
       </div>
 
