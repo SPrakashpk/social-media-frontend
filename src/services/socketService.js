@@ -7,7 +7,7 @@ class SocketService {
   }
 
 
-  connect(serverUrl = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000') {
+  connect(serverUrl = import.meta.env.VITE_BACKEND_BASE_URL || 'https://nodejs-production-f0c4c.up.railway.app') {
     console.log('connecting to server : ', serverUrl)
 
     if (this.socket) return;
