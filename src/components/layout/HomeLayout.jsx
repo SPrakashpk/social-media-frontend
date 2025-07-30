@@ -41,21 +41,6 @@ const HomeLayout = () => (
       >
         <Feed/>
       </div>
-
-      {/* Rightbar */}
-      <div
-        className="feed-area"
-        style={{
-          width: '300px',
-          flexShrink: 0,
-          height: '100%',
-          overflow: 'auto',
-          borderLeft: '1px solid #ddd',
-
-        }}
-      >
-        <Rightbar />
-      </div>
     </div>
   </>
 

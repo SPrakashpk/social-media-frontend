@@ -16,6 +16,7 @@ export const sendMessage = async (senderId, receiverId, messageText) => {
     message: messageText,
   };
 
+
   try {
     const response = await axios.post(API_URL, payload);
     return response.data; // should contain the chatId

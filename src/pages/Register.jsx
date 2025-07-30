@@ -213,10 +213,6 @@ const Register = (props) => {
           <Button variant="primary" type="submit">
             Sign up
           </Button>
-          <Button variant="outline-danger">
-            <Google className="me-2" />
-            Sign up with Google
-          </Button>
         </div>
 
         <div className="text-center">

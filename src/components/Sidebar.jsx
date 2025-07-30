@@ -36,9 +36,6 @@ const Sidebar = () => {
         <Nav.Link as={Link} to={`/profile/${userId}`} className="text-dark pl-40px">
           Profile
         </Nav.Link>
-        <Nav.Link as={Link} to={`/profile/j8kCD0CdihXt`} className="text-dark pl-40px">
-          ganesh
-        </Nav.Link>
         <Nav.Link as={Link} to="/messages" className="text-dark pl-40px">
           Messages
         </Nav.Link>

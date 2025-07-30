@@ -71,13 +71,18 @@ const Profile = () => {
   };
 
   const handleMessage = async () => {
-    try {
-    const data = await sendMessage(currentUser.id, profileId, ''); // Empty message to just open chat
-    navigate(`/chat/${data.chatId}`);
+  try {
+    const res = await sendMessage(currentUser.id, profileId, '');
+    const chatId = res?.data?.chatId;
+
+    if (!chatId) throw new Error("chatId missing from backend response");
+
+    navigate(`/messages/${chatId}`);
   } catch (err) {
     console.error("Failed to initiate chat:", err);
   }
-  }
+};
+
 
   const openFollowersModal = async () => {
     try {
