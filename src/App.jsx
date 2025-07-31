@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import OtpVerify from './pages/otpVerify';
 import LandingPage from './pages/LandingPage';
 
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('chirp_token'));
 
